@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+
+{% block title %}InfraMind - Alertas{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h1>Logs de Alertas</h1>
+        <p class="text-muted mb-0">Alertas ativos e histórico de incidentes</p>
+    </div>
+</div>
+
+<!-- Filters Bar -->
+<div class="glass-card mb-4 p-3">
+    <form method="get" class="row g-3 align-items-center">
+        <div class="col-md-3">
+            <label class="form-label text-muted small fw-semibold">Gravidade</label>
+            <select name="severity" class="form-select bg-dark text-white border-secondary border-opacity-50">
+                <option value="">Todas</option>
+                <option value="low" {% if severity_filter == 'low' %}selected{% endif %}>Baixo</option>
+                <option value="high" {% if severity_filter == 'high' %}selected{% endif %}>Alto</option>
+                <option value="critical" {% if severity_filter == 'critical' %}selected{% endif %}>Crítico</option>
+            </select>
+        </div>
+        
+        <div class="col-md-3">
+            <label class="form-label text-muted small fw-semibold">Status do Alerta</label>
+            <select name="status" class="form-select bg-dark text-white border-secondary border-opacity-50">
+                <option value="">Todos</option>
+                <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Ativo</option>
+                <option value="resolved" {% if status_filter == 'resolved' %}selected{% endif %}>Resolvido</option>
+            </select>
+        </div>
+        
+        <div class="col-md-3 align-self-end">
+            <button type="submit" class="btn btn-premium w-100 py-2">
+                <i class="bi bi-filter me-1"></i> Filtrar Eventos
+            </button>
+        </div>
+        
+        {% if severity_filter or status_filter %}
+        <div class="col-md-3 align-self-end">
+            <a href="{% url 'alerts_list' %}" class="btn btn-outline-secondary w-100 py-2 text-white border-secondary">
+                Limpar Filtros
+            </a>
+        </div>
+        {% endif %}
+    </form>
+</div>
+
+<!-- Alerts Table -->
+<div class="glass-card">
+    {% if alerts %}
+    <div class="table-responsive">
+        <table class="table table-dark table-hover table-borderless align-middle mb-0">
+            <thead>
+                <tr class="text-muted" style="border-bottom: 1px solid rgba(255,255,255,0.08);">
+                    <th>Gravidade</th>
+                    <th>Máquina</th>
+                    <th>Tipo</th>
+                    <th>Descrição</th>
+                    <th>Data de Ocorrência</th>
+                    <th>Status</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for alert in alerts %}
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
+                    <td>
+                        <span class="badge 
+                            {% if alert.severity == 'critical' %}bg-danger
+                            {% elif alert.severity == 'high' %}bg-warning text-dark
+                            {% else %}bg-info text-dark{% endif %} bg-opacity-25 fw-semibold px-2 py-1">
+                            {{ alert.get_severity_display }}
+                        </span>
+                    </td>
+                    <td class="fw-bold text-white">{{ alert.machine.hostname }}</td>
+                    <td class="fw-semibold">{{ alert.type }}</td>
+                    <td class="text-muted">{{ alert.message }}</td>
+                    <td class="text-muted">{{ alert.created_at|date:"d/m/Y H:i:s" }}</td>
+                    <td>
+                        {% if alert.is_resolved %}
+                        <span class="text-success small">
+                            <i class="bi bi-check-circle-fill"></i> Resolvido em {{ alert.resolved_at|date:"d/m H:i" }}
+                        </span>
+                        {% else %}
+                        <span class="text-danger small">
+                            <i class="bi bi-circle-fill"></i> Ativo
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if not alert.is_resolved and request.user.role != 'viewer' %}
+                        <a href="{% url 'resolve_alert' alert.pk %}?next={{ request.get_full_path }}" class="btn btn-sm btn-outline-success">
+                            <i class="bi bi-check-lg"></i> Resolver
+                        </a>
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5 text-muted">
+        <i class="bi bi-shield-check text-success" style="font-size: 3rem;"></i>
+        <p class="mt-2 mb-0">Nenhum alerta correspondente aos filtros foi encontrado.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

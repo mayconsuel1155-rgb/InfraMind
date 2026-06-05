@@ -1,0 +1,100 @@
+<div class="glass-card mb-4" id="timer-section-wrapper">
+    {% if messages %}
+    <div class="mb-3">
+        {% for message in messages %}
+        <div class="alert alert-{% if message.tags == 'error' %}danger{% elif message.tags == 'warning' %}warning{% elif message.tags == 'info' %}info{% else %}success{% endif %} border-0 shadow-sm py-2 px-3 small">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <h5 class="fw-bold mb-0"><i class="bi bi-stopwatch me-2"></i> Apontamentos e Tempo</h5>
+        <span class="badge bg-info bg-opacity-25 text-info fw-semibold">Total: {{ total_work_time_display }}</span>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="p-3 rounded-3" style="background: rgba(15,17,26,0.6); border: 1px solid var(--card-border);">
+                <span class="text-muted small d-block">Tempo total</span>
+                <strong class="text-white">{{ total_work_time_display }}</strong>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="p-3 rounded-3" style="background: rgba(15,17,26,0.6); border: 1px solid var(--card-border);">
+                <span class="text-muted small d-block">Estado do timer</span>
+                <strong class="text-white">{% if active_work_log %}Em andamento{% else %}Pausado{% endif %}</strong>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="p-3 rounded-3" style="background: rgba(15,17,26,0.6); border: 1px solid var(--card-border);">
+                <span class="text-muted small d-block">Responsável atual</span>
+                <strong class="text-white">{% if active_work_log %}{{ active_work_log.user.email }}{% else %}N/A{% endif %}</strong>
+            </div>
+        </div>
+    </div>
+
+    {% if request.user.role != 'viewer' %}
+    <form hx-post="{% url 'ticket_detail' ticket.pk %}" hx-target="#timer-section-wrapper" hx-swap="outerHTML" class="mb-4">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label class="form-label text-muted small">Apontamento</label>
+            <textarea name="note" rows="4" class="form-control bg-dark text-white border-secondary" placeholder="Descreva o que foi verificado, comandos executados, evidências e ações tomadas..."></textarea>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <button type="submit" name="action" value="save_work_note" class="btn btn-outline-light">
+                <i class="bi bi-journal-text me-1"></i> Salvar apontamento
+            </button>
+            {% if active_work_log %}
+            <button type="submit" name="action" value="timer_pause" class="btn btn-warning">
+                <i class="bi bi-pause-fill me-1"></i> Pausar
+            </button>
+            {% else %}
+            <button type="submit" name="action" value="timer_play" class="btn btn-success">
+                <i class="bi bi-play-fill me-1"></i> Iniciar
+            </button>
+            {% endif %}
+        </div>
+    </form>
+    {% else %}
+    <p class="text-muted small mb-4">Usuários viewer podem acompanhar, mas não registrar apontamentos.</p>
+    {% endif %}
+
+    <div class="d-grid gap-3">
+        {% for log in work_logs %}
+        <div class="p-3 rounded-3" style="background: rgba(15,17,26,0.6); border: 1px solid var(--card-border);">
+            <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+                <div>
+                    <div class="text-white fw-semibold">{{ log.user.email }}</div>
+                    <div class="text-muted small">
+                        Início: {{ log.started_at|date:"d/m/Y H:i" }}
+                        {% if log.paused_at %}
+                        | Pausa: {{ log.paused_at|date:"d/m/Y H:i" }}
+                        {% endif %}
+                    </div>
+                </div>
+                <span class="badge {% if log.is_active %}bg-success{% else %}bg-secondary{% endif %} bg-opacity-25">
+                    {{ log.display_duration }}
+                </span>
+            </div>
+            {% if log.note %}
+            <div class="mt-3 text-light" style="white-space: pre-wrap;">{{ log.note }}</div>
+            {% else %}
+            <div class="mt-3 text-muted small">Sem apontamento registrado.</div>
+            {% endif %}
+        </div>
+        {% empty %}
+        <div class="text-muted small">Nenhum apontamento registrado ainda.</div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Out-Of-Band updates for status indicators elsewhere on page -->
+<span id="ticket-status-badge" hx-swap-oob="true" class="badge-status {% if ticket.status == 'open' %}status-critical{% elif ticket.status == 'in_progress' %}status-warning{% else %}status-online{% endif %}">
+    {{ ticket.get_status_display }}
+</span>
+
+<select id="ticket-status-select" hx-swap-oob="true" name="status" class="form-select bg-dark text-white border-secondary">
+    <option value="open" {% if ticket.status == 'open' %}selected{% endif %}>Aberto</option>
+    <option value="in_progress" {% if ticket.status == 'in_progress' %}selected{% endif %}>Em Andamento</option>
+    <option value="resolved" {% if ticket.status == 'resolved' %}selected{% endif %}>Resolvido</option>
+</select>

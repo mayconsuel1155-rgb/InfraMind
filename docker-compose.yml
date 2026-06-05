@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: inframind_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=inframind_user
+      - POSTGRES_PASSWORD=inframind_pass
+      - POSTGRES_DB=inframind_prod
+    ports:
+      - "5433:5432"
+    restart: always
+
+  web:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: inframind_web
+    command: /app/entrypoint.sh
+    volumes:
+      - ./backend/:/app/
+    ports:
+      - "8000:8000"
+    environment:
+      - SECRET_KEY=django-insecure-3*t40apowvf$-6$)##i8i+n@q(f*t0^n#61+uwfzbroj$3e8f0
+      - DEBUG=True
+      - DATABASE=postgres
+      - SQL_ENGINE=django.db.backends.postgresql
+      - SQL_DATABASE=inframind_prod
+      - SQL_USER=inframind_user
+      - SQL_PASSWORD=inframind_pass
+      - SQL_HOST=db
+      - SQL_PORT=5432
+    depends_on:
+      - db
+    restart: always
+
+volumes:
+  postgres_data:

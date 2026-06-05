@@ -1,0 +1,1075 @@
+{% extends 'base.html' %}
+
+{% block title %}InfraMind - Console de Gestão{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Premium Visual Design and Custom Elements */
+    .metric-card {
+        position: relative;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .metric-card:hover {
+        transform: translateY(-4px);
+        border-color: var(--accent-cyan);
+        box-shadow: 0 12px 30px -5px rgba(0, 242, 254, 0.15);
+    }
+    .metric-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, rgba(0, 242, 254, 0.04), transparent);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    .metric-card:hover::before {
+        opacity: 1;
+    }
+
+    /* Premium Tabs Navigation */
+    .nav-tabs-premium {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        gap: 6px;
+    }
+    .nav-tabs-premium .nav-link {
+        color: var(--text-muted);
+        border: 1px solid transparent;
+        border-radius: 12px 12px 0 0;
+        padding: 14px 24px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        transition: all 0.2s ease;
+        background: transparent;
+    }
+    .nav-tabs-premium .nav-link:hover {
+        color: #ffffff;
+        background: rgba(255, 255, 255, 0.03);
+        border-color: rgba(255, 255, 255, 0.05) rgba(255, 255, 255, 0.05) transparent;
+    }
+    .nav-tabs-premium .nav-link.active {
+        color: #ffffff;
+        background: rgba(22, 26, 41, 0.8);
+        border-color: rgba(0, 242, 254, 0.3) rgba(0, 242, 254, 0.3) transparent;
+        box-shadow: inset 0 3px 0 0 var(--accent-cyan);
+        backdrop-filter: blur(10px);
+    }
+
+    /* Form Styles Override */
+    .form-label-premium {
+        font-weight: 500;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: rgba(255, 255, 255, 0.7);
+        margin-bottom: 6px;
+    }
+    
+    /* Table Styling Override */
+    .table-premium {
+        background: transparent !important;
+        border-collapse: separate;
+        border-spacing: 0 8px;
+    }
+    .table-premium thead th {
+        border: none;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        padding: 14px 16px;
+        color: rgba(255, 255, 255, 0.45) !important;
+        background-color: transparent !important;
+    }
+    .table-premium tbody tr {
+        background: rgba(22, 26, 41, 0.35);
+        border-radius: 12px;
+        transition: all 0.25s ease;
+    }
+    .table-premium tbody tr:hover {
+        background: rgba(22, 26, 41, 0.65) !important;
+        transform: scale(1.002);
+    }
+    .table-premium tbody td {
+        border-top: 1px solid rgba(255, 255, 255, 0.03);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        padding: 16px;
+        background-color: transparent !important;
+    }
+    .table-premium tbody td:first-child {
+        border-left: 1px solid rgba(255, 255, 255, 0.03);
+        border-top-left-radius: 12px;
+        border-bottom-left-radius: 12px;
+    }
+    .table-premium tbody td:last-child {
+        border-right: 1px solid rgba(255, 255, 255, 0.03);
+        border-top-right-radius: 12px;
+        border-bottom-right-radius: 12px;
+    }
+
+    /* Badges & Indicators */
+    .badge-premium {
+        padding: 6px 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        border-radius: 30px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        letter-spacing: 0.3px;
+    }
+    .badge-matrix {
+        background: rgba(0, 242, 254, 0.1) !important;
+        color: var(--accent-cyan) !important;
+        border: 1px solid rgba(0, 242, 254, 0.2) !important;
+    }
+    .badge-branch {
+        background: rgba(245, 158, 11, 0.1) !important;
+        color: #f59e0b !important;
+        border: 1px solid rgba(245, 158, 11, 0.2) !important;
+    }
+    .badge-active {
+        background: rgba(16, 185, 129, 0.1) !important;
+        color: #10b981 !important;
+        border: 1px solid rgba(16, 185, 129, 0.2) !important;
+    }
+    .badge-inactive {
+        background: rgba(107, 114, 128, 0.1) !important;
+        color: #9ca3af !important;
+        border: 1px solid rgba(107, 114, 128, 0.2) !important;
+    }
+    .badge-lgpd-accepted {
+        background: rgba(16, 185, 129, 0.1) !important;
+        color: #10b981 !important;
+        border: 1px solid rgba(16, 185, 129, 0.2) !important;
+    }
+    .badge-lgpd-pending {
+        background: rgba(245, 158, 11, 0.1) !important;
+        color: #f59e0b !important;
+        border: 1px solid rgba(245, 158, 11, 0.2) !important;
+    }
+
+    /* Custom scroll for table containers */
+    .table-responsive::-webkit-scrollbar {
+        height: 6px;
+        width: 6px;
+    }
+    .table-responsive::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.1);
+    }
+    .table-responsive::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 3px;
+    }
+    .table-responsive::-webkit-scrollbar-thumb:hover {
+        background: var(--accent-cyan);
+    }
+
+    /* Modal override */
+    .modal-content-premium {
+        background: #0f111a !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6) !important;
+        border-radius: 16px !important;
+    }
+    .modal-header-premium {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+        padding: 20px 24px !important;
+    }
+    .modal-footer-premium {
+        border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+        padding: 16px 24px !important;
+    }
+    
+    .hover-white:hover {
+        color: #ffffff !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Top Header Area -->
+<div class="page-header">
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
+        <div>
+            <h1 class="text-white mb-2">Console de Gestão</h1>
+            <p class="text-muted mb-0">Controle o ambiente multi-tenant, gerencie empresas parceiras, usuários e auditoria LGPD.</p>
+        </div>
+        <div class="glass-card py-3 px-4 d-flex align-items-center gap-3" style="background: linear-gradient(135deg, rgba(0,242,254,0.08), rgba(79,172,254,0.08));">
+            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; background: rgba(0,242,254,0.12); color: var(--accent-cyan);">
+                <i class="bi bi-diagram-3-fill"></i>
+            </div>
+            <div>
+                <div class="text-white fw-semibold">Multi-tenant Ativo</div>
+                <small class="text-muted">Isolamento de dados integrado e verificado.</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Metrics Summary Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="glass-card metric-card h-100">
+            <div class="text-muted small text-uppercase mb-2">Empresas</div>
+            <div class="d-flex align-items-end justify-content-between">
+                <h2 class="mb-0 text-white fw-bold">{{ companies_count }}</h2>
+                <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; background: rgba(0,242,254,0.1); color: var(--accent-cyan);">
+                    <i class="bi bi-buildings" style="font-size: 1.25rem;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="glass-card metric-card h-100">
+            <div class="text-muted small text-uppercase mb-2">Usuários</div>
+            <div class="d-flex align-items-end justify-content-between">
+                <h2 class="mb-0 text-white fw-bold">{{ users_count }}</h2>
+                <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; background: rgba(79,172,254,0.1); color: var(--accent-blue);">
+                    <i class="bi bi-people-fill" style="font-size: 1.25rem;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="glass-card metric-card h-100">
+            <div class="text-muted small text-uppercase mb-2">Máquinas</div>
+            <div class="d-flex align-items-end justify-content-between">
+                <h2 class="mb-0 text-white fw-bold">{{ machines_count }}</h2>
+                <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; background: rgba(25,135,84,0.1); color: #198754;">
+                    <i class="bi bi-laptop" style="font-size: 1.25rem;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="glass-card metric-card h-100">
+            <div class="text-muted small text-uppercase mb-2">Alertas Ativos</div>
+            <div class="d-flex align-items-end justify-content-between">
+                <h2 class="mb-0 text-white fw-bold">{{ alerts_count }}</h2>
+                <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; background: rgba(255,193,7,0.1); color: #ffc107;">
+                    <i class="bi bi-exclamation-triangle" style="font-size: 1.25rem;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Tabs Section -->
+<ul class="nav nav-tabs nav-tabs-premium mb-4" id="managementTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="companies-tab" data-bs-toggle="tab" data-bs-target="#companies-panel" type="button" role="tab" aria-controls="companies-panel" aria-selected="true">
+            <i class="bi bi-buildings me-2"></i>Empresas
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="users-tab" data-bs-toggle="tab" data-bs-target="#users-panel" type="button" role="tab" aria-controls="users-panel" aria-selected="false">
+            <i class="bi bi-people me-2"></i>Usuários
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="lgpd-tab" data-bs-toggle="tab" data-bs-target="#lgpd-panel" type="button" role="tab" aria-controls="lgpd-panel" aria-selected="false">
+            <i class="bi bi-shield-check me-2"></i>Auditoria LGPD
+        </button>
+    </li>
+</ul>
+
+<!-- Tab Contents -->
+<div class="tab-content" id="managementTabsContent">
+    
+    <!-- PANEL: EMPRESAS -->
+    <div class="tab-pane fade show active" id="companies-panel" role="tabpanel" aria-labelledby="companies-tab">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+            <div>
+                <h4 class="text-white mb-1">Empresas Cadastradas</h4>
+                <p class="text-muted small mb-0">Cada empresa parceira possui um token de registro único para agentes.</p>
+            </div>
+            {% if can_manage_companies %}
+            <button class="btn btn-premium d-flex align-items-center gap-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCompanyForm" aria-expanded="false" aria-controls="collapseCompanyForm">
+                <i class="bi bi-plus-lg"></i> Nova Empresa
+            </button>
+            {% endif %}
+        </div>
+
+        {% if can_manage_companies %}
+        <!-- Collapsible New Company Form -->
+        <div class="collapse mb-4" id="collapseCompanyForm">
+            <div class="glass-card border border-info border-opacity-10 p-4">
+                <div class="d-flex align-items-center justify-content-between mb-4 border-bottom border-secondary border-opacity-25 pb-2">
+                    <h5 class="text-white mb-0 d-flex align-items-center gap-2">
+                        <i class="bi bi-building-add text-cyan"></i>
+                        {% if request.user.role == 'superadmin' %}Nova empresa{% else %}Nova Filial (Vinculada à Matriz){% endif %}
+                    </h5>
+                    <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCompanyForm"><i class="bi bi-x-lg"></i> Fechar</button>
+                </div>
+                <form method="post" enctype="multipart/form-data" class="d-grid gap-3">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="create_company">
+                    
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label-premium">CNPJ</label>
+                            <div class="input-group">
+                                <span class="input-group-text glass-input border-end-0 text-muted"><i class="bi bi-card-text"></i></span>
+                                {{ company_form.cnpj }}
+                                <button class="btn btn-outline-info border-start-0" type="button" id="btn-buscar-cnpj">
+                                    <span id="cnpj-spinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                                    <i class="bi bi-search" id="cnpj-search-icon"></i> Buscar
+                                </button>
+                            </div>
+                            <div id="cnpj-error" class="text-danger small mt-1 d-none"></div>
+                            {% if company_form.cnpj.errors %}<div class="text-danger small mt-1">{{ company_form.cnpj.errors|striptags }}</div>{% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label-premium">Logotipo da Empresa</label>
+                            {{ company_form.logo }}
+                            <div class="form-text text-muted small mt-1">Insira uma imagem PNG/JPG para relatórios.</div>
+                            {% if company_form.logo.errors %}<div class="text-danger small mt-1">{{ company_form.logo.errors|striptags }}</div>{% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label-premium">Razão Social</label>
+                            {{ company_form.name }}
+                            {% if company_form.name.errors %}<div class="text-danger small mt-1">{{ company_form.name.errors|striptags }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label-premium">Nome Fantasia</label>
+                            {{ company_form.trade_name }}
+                            {% if company_form.trade_name.errors %}<div class="text-danger small mt-1">{{ company_form.trade_name.errors|striptags }}</div>{% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label-premium">Telefone</label>
+                            {{ company_form.phone }}
+                            {% if company_form.phone.errors %}<div class="text-danger small mt-1">{{ company_form.phone.errors|striptags }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label-premium">E-mail</label>
+                            {{ company_form.email }}
+                            {% if company_form.email.errors %}<div class="text-danger small mt-1">{{ company_form.email.errors|striptags }}</div>{% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Address Sub-grid -->
+                    <div class="p-3 rounded border border-secondary border-opacity-10" style="background: rgba(0,0,0,0.15);">
+                        <div class="text-white fw-semibold mb-3" style="font-size: 0.85rem;"><i class="bi bi-geo-alt me-2 text-cyan"></i>Endereço da Empresa</div>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label-premium">CEP</label>
+                                {{ company_form.address_zip_code }}
+                                {% if company_form.address_zip_code.errors %}<div class="text-danger small mt-1">{{ company_form.address_zip_code.errors|striptags }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label-premium">Logradouro (Rua, Av.)</label>
+                                {{ company_form.address_street }}
+                                {% if company_form.address_street.errors %}<div class="text-danger small mt-1">{{ company_form.address_street.errors|striptags }}</div>{% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label-premium">Número</label>
+                                {{ company_form.address_number }}
+                                {% if company_form.address_number.errors %}<div class="text-danger small mt-1">{{ company_form.address_number.errors|striptags }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label-premium">Complemento</label>
+                                {{ company_form.address_complement }}
+                                {% if company_form.address_complement.errors %}<div class="text-danger small mt-1">{{ company_form.address_complement.errors|striptags }}</div>{% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label-premium">Bairro</label>
+                                {{ company_form.address_neighborhood }}
+                                {% if company_form.address_neighborhood.errors %}<div class="text-danger small mt-1">{{ company_form.address_neighborhood.errors|striptags }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label-premium">Cidade</label>
+                                {{ company_form.address_city }}
+                                {% if company_form.address_city.errors %}<div class="text-danger small mt-1">{{ company_form.address_city.errors|striptags }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label-premium">UF</label>
+                                {{ company_form.address_state }}
+                                {% if company_form.address_state.errors %}<div class="text-danger small mt-1">{{ company_form.address_state.errors|striptags }}</div>{% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if company_form.parent_company.field.widget.input_type == 'hidden' %}
+                        {{ company_form.parent_company }}
+                    {% else %}
+                    <div>
+                        <label class="form-label-premium">Matriz (Caso esta seja uma filial)</label>
+                        {{ company_form.parent_company }}
+                        {% if company_form.parent_company.errors %}<div class="text-danger small mt-1">{{ company_form.parent_company.errors|striptags }}</div>{% endif %}
+                    </div>
+                    {% endif %}
+
+                    <div class="form-check form-switch mt-2">
+                        {{ company_form.is_active }}
+                        <label class="form-check-label text-light ms-2" for="{{ company_form.is_active.id_for_label }}">Empresa ativa</label>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-premium px-4">
+                            <i class="bi bi-save me-1"></i> {% if request.user.role == 'superadmin' %}Criar empresa{% else %}Criar Filial{% endif %}
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#collapseCompanyForm">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Companies Table Container -->
+        <div class="glass-card p-0 overflow-hidden">
+            <div class="table-responsive p-3">
+                <table class="table table-premium align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Razão / Fantasia</th>
+                            <th>CNPJ / Localização</th>
+                            <th>Contato</th>
+                            <th>Status</th>
+                            <th>Token de Registro</th>
+                            <th>Criada em</th>
+                            <th class="text-center">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for company in companies %}
+                        <tr>
+                            <td>
+                                <div class="fw-semibold text-white d-flex align-items-center gap-2">
+                                    {{ company.name }}
+                                    {% if not company.parent_company %}
+                                    <span class="badge-premium badge-matrix">Matriz</span>
+                                    {% else %}
+                                    <span class="badge-premium badge-branch">Filial</span>
+                                    {% endif %}
+                                </div>
+                                {% if company.trade_name and company.trade_name != company.name %}
+                                <small class="text-info d-block" style="font-size: 0.8rem;">{{ company.trade_name }}</small>
+                                {% endif %}
+                                {% if company.parent_company %}
+                                <small class="text-muted d-block" style="font-size: 0.75rem;"><i class="bi bi-diagram-2 me-1"></i> Matriz: {{ company.parent_company.name }}</small>
+                                {% endif %}
+                                <small class="text-muted">/{{ company.slug }}</small>
+                            </td>
+                            <td>
+                                <div class="text-white-50" style="font-size: 0.9rem;">
+                                    <i class="bi bi-card-text me-1 text-muted"></i> {{ company.cnpj|default:"Não informado" }}
+                                </div>
+                                {% if company.address_city %}
+                                <small class="text-muted"><i class="bi bi-geo-alt-fill me-1"></i> {{ company.address_city }} - {{ company.address_state }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if company.email %}
+                                <div class="text-muted" style="font-size: 0.85rem;"><i class="bi bi-envelope me-1"></i> {{ company.email }}</div>
+                                {% endif %}
+                                {% if company.phone %}
+                                <div class="text-muted" style="font-size: 0.85rem;"><i class="bi bi-telephone me-1"></i> {{ company.phone }}</div>
+                                {% endif %}
+                                {% if not company.email and not company.phone %}
+                                <span class="text-muted italic small">Nenhum</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if company.is_active %}
+                                <span class="badge-premium badge-active">Ativa</span>
+                                {% else %}
+                                <span class="badge-premium badge-inactive">Inativa</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <code class="text-cyan font-monospace" id="token-{{ company.id }}">{{ company.registration_token }}</code>
+                                    <button class="btn btn-sm btn-link p-0 text-muted hover-white" onclick="copyTokenRow('token-{{ company.id }}', this)" title="Copiar Token">
+                                        <i class="bi bi-copy" style="font-size: 0.8rem;"></i>
+                                    </button>
+                                </div>
+                            </td>
+                            <td class="text-muted" style="font-size: 0.85rem;">{{ company.created_at|date:"d/m/Y H:i" }}</td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-outline-info btn-sm" title="Editar Empresa" data-bs-toggle="modal" data-bs-target="#editCompanyModal{{ company.id }}">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-4">Nenhuma empresa cadastrada.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- PANEL: USUÁRIOS -->
+    <div class="tab-pane fade" id="users-panel" role="tabpanel" aria-labelledby="users-tab">
+        <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+            <div>
+                <h4 class="text-white mb-1">Usuários Cadastrados</h4>
+                <p class="text-muted small mb-0">Gerencie acessos ao portal InfraMind, perfis e consentimento LGPD.</p>
+            </div>
+            
+            <div class="d-flex flex-wrap gap-2 align-items-center">
+                {% if request.user.role == 'superadmin' %}
+                <form method="get" class="d-flex gap-2 align-items-center me-2">
+                    <label class="text-muted small text-nowrap">Filtrar por Empresa:</label>
+                    <select name="company" class="form-select form-select-sm glass-input" style="min-width: 180px;" onchange="this.form.submit()">
+                        <option value="">Todas as empresas</option>
+                        {% for company in companies %}
+                        <option value="{{ company.id }}" {% if request.GET.company == company.id|stringformat:"s" %}selected{% endif %}>{{ company.name }}</option>
+                        {% endfor %}
+                    </select>
+                </form>
+                {% endif %}
+                <button class="btn btn-premium d-flex align-items-center gap-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseUserForm" aria-expanded="false" aria-controls="collapseUserForm">
+                    <i class="bi bi-person-plus"></i> Novo Usuário
+                </button>
+            </div>
+        </div>
+
+        <!-- Collapsible New User Form -->
+        <div class="collapse mb-4" id="collapseUserForm">
+            <div class="glass-card border border-info border-opacity-10 p-4">
+                <div class="d-flex align-items-center justify-content-between mb-4 border-bottom border-secondary border-opacity-25 pb-2">
+                    <h5 class="text-white mb-0 d-flex align-items-center gap-2">
+                        <i class="bi bi-person-add text-cyan"></i>
+                        Cadastrar Novo Usuário
+                    </h5>
+                    <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseUserForm"><i class="bi bi-x-lg"></i> Fechar</button>
+                </div>
+                <form method="post" class="d-grid gap-3">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="create_user">
+                    
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label-premium">E-mail</label>
+                            <div class="input-group">
+                                <span class="input-group-text glass-input border-end-0 text-muted"><i class="bi bi-envelope"></i></span>
+                                {{ user_form.email }}
+                            </div>
+                            {% if user_form.email.errors %}<div class="text-danger small mt-1">{{ user_form.email.errors|striptags }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label-premium">Senha Inicial</label>
+                            <div class="input-group">
+                                <span class="input-group-text glass-input border-end-0 text-muted"><i class="bi bi-key"></i></span>
+                                {{ user_form.password }}
+                            </div>
+                            {% if user_form.password.errors %}<div class="text-danger small mt-1">{{ user_form.password.errors|striptags }}</div>{% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label-premium">Perfil</label>
+                            <div class="input-group">
+                                <span class="input-group-text glass-input border-end-0 text-muted"><i class="bi bi-person-badge"></i></span>
+                                {{ user_form.role }}
+                            </div>
+                            {% if user_form.role.errors %}<div class="text-danger small mt-1">{{ user_form.role.errors|striptags }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            {% if user_form.company.field.widget.input_type == 'hidden' %}
+                                {{ user_form.company }}
+                            {% else %}
+                            <label class="form-label-premium">Empresa Vinculada</label>
+                            <div class="input-group">
+                                <span class="input-group-text glass-input border-end-0 text-muted"><i class="bi bi-buildings"></i></span>
+                                {{ user_form.company }}
+                            </div>
+                            {% if user_form.company.errors %}<div class="text-danger small mt-1">{{ user_form.company.errors|striptags }}</div>{% endif %}
+                            {% if user_form.company.help_text %}<div class="form-text text-muted small mt-1">{{ user_form.company.help_text }}</div>{% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="form-check form-switch mt-2">
+                        {{ user_form.is_active }}
+                        <label class="form-check-label text-light ms-2" for="{{ user_form.is_active.id_for_label }}">Usuário ativo</label>
+                    </div>
+
+                    {% if user_form.non_field_errors %}
+                    <div class="alert alert-danger mb-0">{{ user_form.non_field_errors|striptags }}</div>
+                    {% endif %}
+
+                    <div class="d-flex gap-2 mt-2">
+                        <button type="submit" class="btn btn-premium px-4">
+                            <i class="bi bi-save me-1"></i> Criar Usuário
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#collapseUserForm">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Users Table Container -->
+        <div class="glass-card p-0 overflow-hidden">
+            <div class="table-responsive p-3">
+                <table class="table table-premium align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>E-mail</th>
+                            <th>Perfil</th>
+                            <th>Empresa</th>
+                            <th>Status</th>
+                            <th>Consentimento LGPD</th>
+                            <th class="text-center">Ações / LGPD</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr>
+                            <td class="text-white fw-semibold">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; background: rgba(255,255,255,0.05); color: #fff;">
+                                        <i class="bi bi-person"></i>
+                                    </div>
+                                    {{ user.email }}
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-20" style="padding: 5px 10px; font-weight: 500;">
+                                    {{ user.get_role_display }}
+                                </span>
+                            </td>
+                            <td class="text-muted">{{ user.company.name|default:"Administrador Global (Sem empresa)" }}</td>
+                            <td>
+                                {% if user.is_active %}
+                                <span class="text-success small d-flex align-items-center gap-1.5"><i class="bi bi-circle-fill" style="font-size: 0.5rem;"></i> Ativo</span>
+                                {% else %}
+                                <span class="text-muted small d-flex align-items-center gap-1.5"><i class="bi bi-circle-fill" style="font-size: 0.5rem;"></i> Inativo</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if user.lgpd_accepted_terms %}
+                                <span class="badge-premium badge-lgpd-accepted" title="Aceito em {{ user.lgpd_accepted_at|date:'d/m/Y H:i' }}">
+                                    <i class="bi bi-shield-fill-check"></i> Aceito
+                                </span>
+                                {% else %}
+                                <span class="badge-premium badge-lgpd-pending">
+                                    <i class="bi bi-shield-fill-exclamation"></i> Pendente
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-outline-warning btn-sm me-1" title="Redefinir Senha" data-bs-toggle="modal" data-bs-target="#resetPasswordModal{{ user.id }}">
+                                    <i class="bi bi-key"></i>
+                                </button>
+                                <a href="{% url 'lgpd_export_user_data' user.id %}" class="btn btn-outline-info btn-sm me-1" title="Exportar Dados (Portabilidade)"><i class="bi bi-download"></i></a>
+                                
+                                {% if user != request.user and user.role != 'superadmin' or request.user.role == 'superadmin' %}
+                                    {% if user != request.user %}
+                                    <a href="{% url 'lgpd_anonymize_user' user.id %}" class="btn btn-outline-danger btn-sm" title="Anonimizar Usuário (Esquecimento)" onclick="return confirm('ATENÇÃO: A anonimização é irreversível e desativará a conta do usuário {{ user.email }} de acordo com a LGPD. Deseja prosseguir?')"><i class="bi bi-shield-slash"></i></a>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">Nenhum usuário encontrado.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- PANEL: AUDITORIA LGPD -->
+    <div class="tab-pane fade" id="lgpd-panel" role="tabpanel" aria-labelledby="lgpd-tab">
+        <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+            <div>
+                <h4 class="text-white mb-1">Registro de Operações LGPD (Auditoria)</h4>
+                <p class="text-muted small mb-0">Últimas 100 operações de tratamento de dados pessoais registradas no sistema.</p>
+            </div>
+        </div>
+
+        <!-- Audit Table Container -->
+        <div class="glass-card p-0 overflow-hidden">
+            <div class="table-responsive p-3" style="max-height: 500px; overflow-y: auto;">
+                <table class="table table-premium align-middle mb-0">
+                    <thead>
+                        <tr style="font-size: 0.85rem;">
+                            <th>Data / Hora</th>
+                            <th>Operador</th>
+                            {% if request.user.role == 'superadmin' %}<th>Empresa</th>{% endif %}
+                            <th>Titular dos Dados</th>
+                            <th>Operação</th>
+                            <th>Detalhes</th>
+                            <th>Endereço IP</th>
+                        </tr>
+                    </thead>
+                    <tbody style="font-size: 0.85rem;">
+                        {% for log in lgpd_logs %}
+                        <tr>
+                            <td class="text-nowrap text-muted">{{ log.created_at|date:"d/m/Y H:i:s" }}</td>
+                            <td class="text-white-50 text-truncate" style="max-width: 150px;" title="{{ log.operator.email|default:'Sistema' }}">{{ log.operator.email|default:"Sistema" }}</td>
+                            {% if request.user.role == 'superadmin' %}<td class="text-muted text-truncate" style="max-width: 120px;">{{ log.company.name|default:"Global" }}</td>{% endif %}
+                            <td class="text-white text-truncate" style="max-width: 150px;" title="{{ log.target_email }}">{{ log.target_email }}</td>
+                            <td>
+                                {% if log.action == 'consent_accept' %}
+                                <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-20" style="padding: 4px 8px;">Aceite Termos</span>
+                                {% elif log.action == 'data_export' %}
+                                <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-20" style="padding: 4px 8px;">Portabilidade</span>
+                                {% elif log.action == 'anonymization' %}
+                                <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-20" style="padding: 4px 8px;">Anonimização</span>
+                                {% elif log.action == 'user_creation' %}
+                                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-20" style="padding: 4px 8px;">Criação</span>
+                                {% else %}
+                                <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-20" style="padding: 4px 8px;">{{ log.get_action_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-muted" style="max-width: 280px; white-space: normal; word-wrap: break-word;">{{ log.details }}</td>
+                            <td class="text-muted font-monospace" style="font-size: 0.8rem;">{{ log.ip_address|default:"-" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="{% if request.user.role == 'superadmin' %}7{% else %}6{% endif %}" class="text-center text-muted py-4">Nenhum log de auditoria registrado.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modais de Edição de Empresa (Fora das tabelas para evitar bug de sobreposição do backdrop) -->
+{% for company in companies %}
+    <div class="modal fade text-start" id="editCompanyModal{{ company.id }}" tabindex="-1" aria-labelledby="editCompanyModalLabel{{ company.id }}" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content modal-content-premium text-light">
+                <div class="modal-header modal-header-premium">
+                    <h5 class="modal-title" id="editCompanyModalLabel{{ company.id }}">
+                        <i class="bi bi-pencil-square text-cyan me-1"></i> Editar Dados de {{ company.name }}
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="post" enctype="multipart/form-data" action="{% url 'management_console' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="edit_company">
+                    <input type="hidden" name="company_id" value="{{ company.id }}">
+                    <div class="modal-body d-grid gap-3 p-4">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label-premium">Razão Social</label>
+                                <input type="text" name="name" value="{{ company.name }}" class="form-control glass-input" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label-premium">Nome Fantasia</label>
+                                <input type="text" name="trade_name" value="{{ company.trade_name|default:'' }}" class="form-control glass-input">
+                            </div>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label-premium">CNPJ</label>
+                                <input type="text" name="cnpj" value="{{ company.cnpj|default:'' }}" class="form-control glass-input" placeholder="00.000.000/0000-00">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label-premium">Logotipo da Empresa</label>
+                                <input type="file" name="logo" class="form-control glass-input" accept="image/*">
+                                {% if company.logo %}
+                                <div class="form-text text-muted small mt-1">Logo atual: <a href="{{ company.logo.url }}" target="_blank" class="text-cyan">{{ company.logo.name }}</a></div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label-premium">Telefone</label>
+                                <input type="text" name="phone" value="{{ company.phone|default:'' }}" class="form-control glass-input">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label-premium">E-mail</label>
+                                <input type="email" name="email" value="{{ company.email|default:'' }}" class="form-control glass-input">
+                            </div>
+                        </div>
+                        
+                        <div class="p-3 rounded border border-secondary border-opacity-10" style="background: rgba(0,0,0,0.15);">
+                            <div class="text-white fw-semibold mb-3" style="font-size: 0.85rem;"><i class="bi bi-geo-alt me-2 text-cyan"></i>Endereço da Empresa</div>
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-4">
+                                    <label class="form-label-premium">CEP</label>
+                                    <input type="text" name="address_zip_code" value="{{ company.address_zip_code|default:'' }}" class="form-control glass-input">
+                                </div>
+                                <div class="col-md-8">
+                                    <label class="form-label-premium">Logradouro</label>
+                                    <input type="text" name="address_street" value="{{ company.address_street|default:'' }}" class="form-control glass-input">
+                                </div>
+                            </div>
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-4">
+                                    <label class="form-label-premium">Número</label>
+                                    <input type="text" name="address_number" value="{{ company.address_number|default:'' }}" class="form-control glass-input">
+                                </div>
+                                <div class="col-md-8">
+                                    <label class="form-label-premium">Complemento</label>
+                                    <input type="text" name="address_complement" value="{{ company.address_complement|default:'' }}" class="form-control glass-input">
+                                </div>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label-premium">Bairro</label>
+                                    <input type="text" name="address_neighborhood" value="{{ company.address_neighborhood|default:'' }}" class="form-control glass-input">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label-premium">Cidade</label>
+                                    <input type="text" name="address_city" value="{{ company.address_city|default:'' }}" class="form-control glass-input">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label-premium">UF</label>
+                                    <input type="text" name="address_state" value="{{ company.address_state|default:'' }}" class="form-control glass-input" maxlength="2">
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if request.user.role == 'superadmin' %}
+                        <div>
+                            <label class="form-label-premium">Matriz (Caso esta seja uma filial)</label>
+                            <select name="parent_company" class="form-select glass-input">
+                                <option value="">Nenhuma (Esta empresa é Matriz)</option>
+                                {% for other_company in companies %}
+                                    {% if other_company.id != company.id %}
+                                    <option value="{{ other_company.id }}" {% if company.parent_company_id == other_company.id %}selected{% endif %}>{{ other_company.name }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% endif %}
+                        <div class="form-check form-switch mt-2">
+                            <input type="checkbox" name="is_active" class="form-check-input" role="switch" id="edit_active_{{ company.id }}" {% if company.is_active %}checked{% endif %}>
+                            <label class="form-check-label ms-2 text-light" for="edit_active_{{ company.id }}">Empresa ativa</label>
+                        </div>
+                    </div>
+                    <div class="modal-footer modal-footer-premium">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-premium">Salvar Alterações</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endfor %}
+
+<!-- Modais de Redefinição de Senha (Fora das tabelas para evitar bug de sobreposição do backdrop) -->
+{% for user in users %}
+    <div class="modal fade text-start" id="resetPasswordModal{{ user.id }}" tabindex="-1" aria-labelledby="resetPasswordModalLabel{{ user.id }}" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content modal-content-premium text-light">
+                <div class="modal-header modal-header-premium">
+                    <h5 class="modal-title" id="resetPasswordModalLabel{{ user.id }}"><i class="bi bi-key text-warning me-1"></i> Redefinir Senha</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="post" action="{% url 'user_reset_password' user.id %}">
+                    {% csrf_token %}
+                    <div class="modal-body p-4">
+                        <p class="text-muted small">Digite a nova senha para o usuário <strong>{{ user.email }}</strong>.</p>
+                        <div class="mb-3">
+                            <label class="form-label-premium">Nova Senha</label>
+                            <input type="password" name="new_password" class="form-control glass-input" required minlength="6" placeholder="Mínimo de 6 caracteres">
+                        </div>
+                    </div>
+                    <div class="modal-footer modal-footer-premium">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-warning text-dark fw-semibold">Alterar Senha</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endfor %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Row token copy function
+function copyTokenRow(id, button) {
+    const textElement = document.getElementById(id);
+    if (!textElement) return;
+    
+    navigator.clipboard.writeText(textElement.innerText).then(() => {
+        const icon = button.querySelector('i');
+        if (icon) {
+            icon.className = "bi bi-check-lg text-success";
+            setTimeout(() => {
+                icon.className = "bi bi-copy";
+            }, 2000);
+        }
+    }).catch(err => {
+        console.error("Erro ao copiar token: ", err);
+    });
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+    const btnBuscar = document.getElementById("btn-buscar-cnpj");
+    const inputCnpj = document.querySelector('[name="company-cnpj"]');
+    const inputName = document.querySelector('[name="company-name"]');
+    const inputTradeName = document.querySelector('[name="company-trade_name"]');
+    const inputPhone = document.querySelector('[name="company-phone"]');
+    const inputEmail = document.querySelector('[name="company-email"]');
+    const inputCep = document.querySelector('[name="company-address_zip_code"]');
+    const inputStreet = document.querySelector('[name="company-address_street"]');
+    const inputNumber = document.querySelector('[name="company-address_number"]');
+    const inputComplement = document.querySelector('[name="company-address_complement"]');
+    const inputNeighborhood = document.querySelector('[name="company-address_neighborhood"]');
+    const inputCity = document.querySelector('[name="company-address_city"]');
+    const inputState = document.querySelector('[name="company-address_state"]');
+    
+    const spinner = document.getElementById("cnpj-spinner");
+    const searchIcon = document.getElementById("cnpj-search-icon");
+    const cnpjError = document.getElementById("cnpj-error");
+
+    // Maintain current active tab based on query parameters or form errors
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('company')) {
+        const usersTab = document.querySelector('#users-tab');
+        if (usersTab) {
+            new bootstrap.Tab(usersTab).show();
+        }
+    }
+
+    // Auto-expand collapses if form validation errors exist
+    {% if company_form.errors or company_form.non_field_errors %}
+        const compTab = document.querySelector('#companies-tab');
+        if (compTab) {
+            new bootstrap.Tab(compTab).show();
+        }
+        const collapseCompany = document.getElementById('collapseCompanyForm');
+        if (collapseCompany) {
+            new bootstrap.Collapse(collapseCompany, { show: true });
+        }
+    {% endif %}
+
+    {% if user_form.errors or user_form.non_field_errors %}
+        const uTab = document.querySelector('#users-tab');
+        if (uTab) {
+            new bootstrap.Tab(uTab).show();
+        }
+        const collapseUser = document.getElementById('collapseUserForm');
+        if (collapseUser) {
+            new bootstrap.Collapse(collapseUser, { show: true });
+        }
+    {% endif %}
+
+    if (btnBuscar && inputCnpj) {
+        // Format CNPJ on typing
+        inputCnpj.addEventListener("input", function(e) {
+            let value = e.target.value.replace(/\D/g, "");
+            if (value.length > 14) value = value.substring(0, 14);
+            
+            let formatted = "";
+            if (value.length <= 2) {
+                formatted = value;
+            } else if (value.length <= 5) {
+                formatted = value.substring(0, 2) + "." + value.substring(2);
+            } else if (value.length <= 8) {
+                formatted = value.substring(0, 2) + "." + value.substring(2, 5) + "." + value.substring(5);
+            } else if (value.length <= 12) {
+                formatted = value.substring(0, 2) + "." + value.substring(2, 5) + "." + value.substring(5, 8) + "/" + value.substring(8);
+            } else {
+                formatted = value.substring(0, 2) + "." + value.substring(2, 5) + "." + value.substring(5, 8) + "/" + value.substring(8, 12) + "-" + value.substring(12);
+            }
+            e.target.value = formatted;
+        });
+
+        // Format CEP on typing
+        if (inputCep) {
+            inputCep.addEventListener("input", function(e) {
+                let value = e.target.value.replace(/\D/g, "");
+                if (value.length > 8) value = value.substring(0, 8);
+                
+                let formatted = "";
+                if (value.length <= 5) {
+                    formatted = value;
+                } else {
+                    formatted = value.substring(0, 5) + "-" + value.substring(5);
+                }
+                e.target.value = formatted;
+            });
+        }
+
+        btnBuscar.addEventListener("click", function() {
+            const cnpj = inputCnpj.value.replace(/\D/g, "");
+            if (cnpj.length !== 14) {
+                showError("CNPJ inválido. Digite 14 números.");
+                return;
+            }
+
+            // Start loading state
+            spinner.classList.remove("d-none");
+            searchIcon.classList.add("d-none");
+            btnBuscar.disabled = true;
+            cnpjError.classList.add("d-none");
+
+            fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("CNPJ não encontrado ou indisponível.");
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Fill fields
+                    if (inputName) inputName.value = data.razao_social || "";
+                    if (inputTradeName) inputTradeName.value = data.nome_fantasia || data.razao_social || "";
+                    if (inputPhone) {
+                        let phoneStr = "";
+                        if (data.ddd_telefone_1) {
+                            phoneStr = data.ddd_telefone_1;
+                        } else if (data.telefone) {
+                            phoneStr = data.telefone;
+                        }
+                        inputPhone.value = phoneStr;
+                    }
+                    if (inputEmail) inputEmail.value = data.email || "";
+                    if (inputCep) {
+                        let cepVal = data.cep || "";
+                        if (cepVal.length === 8) {
+                            cepVal = cepVal.substring(0, 5) + "-" + cepVal.substring(5);
+                        }
+                        inputCep.value = cepVal;
+                    }
+                    if (inputStreet) inputStreet.value = `${data.descricao_tipo_de_logradouro || ""} ${data.logradouro || ""}`.trim();
+                    if (inputNumber) inputNumber.value = data.numero || "";
+                    if (inputComplement) inputComplement.value = data.complemento || "";
+                    if (inputNeighborhood) inputNeighborhood.value = data.bairro || "";
+                    if (inputCity) inputCity.value = data.municipio || "";
+                    if (inputState) inputState.value = data.uf || "";
+                })
+                .catch(error => {
+                    showError(error.message || "Erro ao consultar CNPJ. Tente novamente.");
+                })
+                .finally(() => {
+                    // Reset button state
+                    spinner.classList.add("d-none");
+                    searchIcon.classList.remove("d-none");
+                    btnBuscar.disabled = false;
+                });
+        });
+    }
+
+    function showError(msg) {
+        cnpjError.textContent = msg;
+        cnpjError.classList.remove("d-none");
+    }
+});
+</script>
+{% endblock %}

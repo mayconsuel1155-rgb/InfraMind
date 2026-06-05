@@ -1,0 +1,281 @@
+﻿{% extends 'base.html' %}
+
+{% block title %}InfraMind - ConfiguraÃ§Ãµes de IA{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="d-flex align-items-center justify-content-between">
+        <div>
+            <h1 class="text-white">IntegraÃ§Ãµes de InteligÃªncia Artificial</h1>
+            <p class="text-muted">Configure as credenciais e modelos de IA para diagnÃ³sticos automÃ¡ticos e suporte inteligente.</p>
+        </div>
+        <div class="glass-card py-2 px-3 d-flex align-items-center gap-2" style="background: rgba(0, 242, 254, 0.05); border-color: rgba(0, 242, 254, 0.15);">
+            <i class="bi bi-shield-lock-fill text-cyan" style="color: var(--accent-cyan);"></i>
+            <span style="font-size: 0.85rem; font-weight: 500;">Dados Criptografados (AES-Fernet)</span>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="glass-card mb-4">
+            <h5 class="card-title text-white mb-4 d-flex align-items-center gap-2">
+                <i class="bi bi-robot text-cyan" style="color: var(--accent-cyan); font-size: 1.4rem;"></i>
+                ConfiguraÃ§Ã£o do Provedor de IA
+            </h5>
+
+            {% if success_message %}
+                <div class="alert alert-success bg-success-subtle text-success border border-success-subtle mb-4" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i> {{ success_message }}
+                </div>
+            {% endif %}
+
+            {% if error_message %}
+                <div class="alert alert-danger bg-danger-subtle text-danger border border-danger-subtle mb-4" role="alert">
+                    <i class="bi bi-exclamation-octagon-fill me-2"></i> {{ error_message }}
+                </div>
+            {% endif %}
+
+            <form method="POST" id="aiConfigForm">
+                {% csrf_token %}
+                
+                <!-- AI Provider -->
+                <div class="mb-4">
+                    <label for="provider" class="form-label text-light fw-medium">Provedor de IA</label>
+                    <select class="form-select glass-input" id="provider" name="provider" onchange="updateModels()">
+                        <option value="openai" {% if ai_config.provider == 'openai' %}selected{% endif %}>OpenAI (ChatGPT)</option>
+                        <option value="openrouter" {% if ai_config.provider == 'openrouter' %}selected{% endif %}>OpenRouter (OpenAI-compatible)</option>
+                        <option value="anthropic" {% if ai_config.provider == 'anthropic' %}selected{% endif %}>Anthropic (Claude)</option>
+                        <option value="google" {% if ai_config.provider == 'google' %}selected{% endif %}>Google (Gemini)</option>
+                    </select>
+                    <div class="form-text text-muted">Selecione o motor de processamento de IA para o seu tenant.</div>
+                </div>
+
+                <!-- AI Model -->
+                <div class="mb-4">
+                    <label for="model_name" class="form-label text-light fw-medium">Modelo da IA</label>
+                    <select class="form-select glass-input" id="model_name" name="model_name" onchange="checkCustomModel()">
+                        <!-- Populated by JavaScript based on provider -->
+                    </select>
+                    <div class="form-text text-muted">Modelos mais leves fornecem respostas mais rÃ¡pidas, ideais para triagem Ã¡gil.</div>
+                </div>
+
+                <!-- Custom AI Model Input (Hidden by default) -->
+                <div class="mb-4 d-none" id="customModelContainer">
+                    <label for="model_name_custom" class="form-label text-warning fw-medium">Identificador do Modelo Personalizado</label>
+                    <input type="text" class="form-control glass-input" id="model_name_custom" name="model_name_custom" 
+                           placeholder="Ex: gpt-4-turbo, claude-3-opus-20240229, gemini-2.0-flash-exp">
+                    <div class="form-text text-muted">Digite o identificador exato do modelo conforme a documentaÃ§Ã£o oficial do provedor.</div>
+                </div>
+
+                <!-- API Key -->
+                <div class="mb-4">
+                    <label for="api_key" class="form-label text-light fw-medium">Chave de API (API Key)</label>
+                    <div class="input-group">
+                        <span class="input-group-text glass-input"><i class="bi bi-key-fill text-muted"></i></span>
+                        <input type="password" class="form-control glass-input" id="api_key" name="api_key" 
+                               placeholder="{% if masked_api_key %}Insira uma nova chave de API para alterar ({{ masked_api_key }}){% else %}Cole sua chave de API aqui...{% endif %}">
+                        <button type="button" class="btn btn-outline-info" id="btnTest" onclick="testConnection()">
+                            <span class="spinner-border spinner-border-sm d-none" id="testSpinner" role="status" aria-hidden="true"></span>
+                            <span id="btnTestText">Testar ConexÃ£o</span>
+                        </button>
+                    </div>
+                    <div class="form-text text-muted">
+                        Insira a chave obtida no painel do respectivo provedor. Ela serÃ¡ criptografada antes de ser salva no banco.
+                    </div>
+                    <div id="testResult" class="mt-2 fw-medium" style="font-size: 0.9rem;"></div>
+                </div>
+
+                <!-- Active Status -->
+                <div class="mb-4 form-check form-switch">
+                    <input class="form-check-input" type="checkbox" role="switch" id="is_active" name="is_active" {% if ai_config.is_active %}checked{% endif %}>
+                    <label class="form-check-label text-light" for="is_active">Ativar diagnÃ³stico por IA neste Tenant</label>
+                    <div class="form-text text-muted">Quando ativo, tÃ©cnicos e administradores poderÃ£o gerar relatÃ³rios assistidos na tela de incidentes.</div>
+                </div>
+
+                <div class="d-flex align-items-center gap-3">
+                    <button type="submit" class="btn btn-premium d-flex align-items-center gap-2">
+                        <i class="bi bi-save"></i> Salvar ConfiguraÃ§Ã£o
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <!-- Help Information Card -->
+        <div class="glass-card mb-4" style="border-left: 3px solid var(--accent-cyan);">
+            <h5 class="text-white mb-3">Como obter as Chaves de API?</h5>
+            <ul class="text-muted p-0 ps-3" style="font-size: 0.9rem; line-height: 1.6;">
+                <li class="mb-2">
+                    <strong class="text-white">OpenAI:</strong> Acesse a <a href="https://platform.openai.com/api-keys" target="_blank" class="text-cyan">Plataforma OpenAI</a>, crie uma chave secreta e garanta que tenha crÃ©ditos ativos.
+                </li>
+                <li class="mb-2">
+                    <strong class="text-white">Anthropic:</strong> Crie sua conta e gere chaves no <a href="https://console.anthropic.com/" target="_blank" class="text-cyan">Console Anthropic</a>.
+                </li>
+                <li class="mb-2">
+                    <strong class="text-white">Google Gemini:</strong> Obtenha uma chave gratuita ou pós-paga no <a href="https://aistudio.google.com/" target="_blank" class="text-cyan">Google AI Studio</a>.
+                </li>
+                <li class="mb-2">
+                    <strong class="text-white">OpenRouter:</strong> Use uma chave `sk-or-...` no <a href="https://openrouter.ai/" target="_blank" class="text-cyan">OpenRouter</a> e escolha um modelo compatível do catálogo deles.
+                </li>
+            </ul>
+        </div>
+
+        <div class="glass-card">
+            <h5 class="text-white mb-3">Por que configurar a IA?</h5>
+            <p class="text-muted" style="font-size: 0.9rem; line-height: 1.6;">
+                O InfraMind utiliza IA generativa para ler as telemetrias acumuladas nas mÃ¡quinas (como picos de processamento, travamentos de disco, ou incidentes de memÃ³ria) no momento em que um alerta Ã© disparado.
+            </p>
+            <p class="text-muted" style="font-size: 0.9rem; line-height: 1.6;">
+                A IA analisa o histÃ³rico e sugere aÃ§Ãµes de soluÃ§Ã£o imediatas, poupando tempo valioso dos tÃ©cnicos de suporte corporativo.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const modelsByProvider = {
+        openai: [
+            { value: 'gpt-4o-mini', label: 'gpt-4o-mini (fast and affordable)' },
+            { value: 'gpt-4o', label: 'gpt-4o (full quality)' }
+        ],
+        openrouter: [
+            { value: 'openai/gpt-4o-mini', label: 'openai/gpt-4o-mini (via OpenRouter)' },
+            { value: 'openai/gpt-4o', label: 'openai/gpt-4o (via OpenRouter)' },
+            { value: 'anthropic/claude-3.5-sonnet', label: 'anthropic/claude-3.5-sonnet (via OpenRouter)' },
+            { value: 'meta-llama/llama-3.3-70b-instruct', label: 'meta-llama/llama-3.3-70b-instruct (via OpenRouter)' }
+        ],
+        anthropic: [
+            { value: 'claude-3-5-haiku-20241022', label: 'Claude 3.5 Haiku (fast)' },
+            { value: 'claude-3-5-sonnet-20241022', label: 'Claude 3.5 Sonnet (advanced)' }
+        ],
+        google: [
+            { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash (ultra fast)' },
+            { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro (deeper analysis)' }
+        ]
+    };
+
+    const currentModel = "{{ ai_config.model_name|default:'' }}";
+
+    function updateModels() {
+        const provider = document.getElementById('provider').value;
+        const modelSelect = document.getElementById('model_name');
+        const customContainer = document.getElementById('customModelContainer');
+        const customInput = document.getElementById('model_name_custom');
+        
+        // Clear options
+        modelSelect.innerHTML = '';
+        
+        let isPredefined = false;
+        
+        // Populate options
+        if (modelsByProvider[provider]) {
+            modelsByProvider[provider].forEach(model => {
+                const option = document.createElement('option');
+                option.value = model.value;
+                option.text = model.label;
+                if (model.value === currentModel) {
+                    option.selected = true;
+                    isPredefined = true;
+                }
+                modelSelect.appendChild(option);
+            });
+        }
+        
+        // Add custom option
+        const customOption = document.createElement('option');
+        customOption.value = 'custom';
+        customOption.text = 'Outro Modelo (Digitar ID personalizado...)';
+        
+        if (currentModel && !isPredefined) {
+            customOption.selected = true;
+            customContainer.classList.remove('d-none');
+            customInput.value = currentModel;
+        } else {
+            customContainer.classList.add('d-none');
+            customInput.value = '';
+        }
+        
+        modelSelect.appendChild(customOption);
+    }
+
+    function checkCustomModel() {
+        const modelSelect = document.getElementById('model_name');
+        const customContainer = document.getElementById('customModelContainer');
+        const customInput = document.getElementById('model_name_custom');
+        
+        if (modelSelect.value === 'custom') {
+            customContainer.classList.remove('d-none');
+            customInput.focus();
+        } else {
+            customContainer.classList.add('d-none');
+            customInput.value = '';
+        }
+    }
+
+    function testConnection() {
+        const provider = document.getElementById('provider').value;
+        let model_name = document.getElementById('model_name').value;
+        if (model_name === 'custom') {
+            model_name = document.getElementById('model_name_custom').value;
+        }
+        const api_key = document.getElementById('api_key').value;
+
+        const btnTest = document.getElementById('btnTest');
+        const btnTestText = document.getElementById('btnTestText');
+        const spinner = document.getElementById('testSpinner');
+        const resultDiv = document.getElementById('testResult');
+
+        // Reset UI
+        resultDiv.className = 'mt-2 fw-medium';
+        resultDiv.innerHTML = '';
+        spinner.classList.remove('d-none');
+        btnTest.disabled = true;
+        btnTestText.innerText = 'Testando...';
+
+        fetch("{% url 'api_test_ai' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                provider: provider,
+                model_name: model_name,
+                api_key: api_key
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            spinner.classList.add('d-none');
+            btnTest.disabled = false;
+            btnTestText.innerText = 'Testar ConexÃ£o';
+
+            if (data.status === 'ok') {
+                resultDiv.classList.add('text-success');
+                resultDiv.innerHTML = `<i class="bi bi-check-circle-fill"></i> ${data.message}`;
+            } else {
+                resultDiv.classList.add('text-danger');
+                resultDiv.innerHTML = `<i class="bi bi-x-circle-fill"></i> ${data.message}`;
+            }
+        })
+        .catch(error => {
+            spinner.classList.add('d-none');
+            btnTest.disabled = false;
+            btnTestText.innerText = 'Testar ConexÃ£o';
+            resultDiv.classList.add('text-danger');
+            resultDiv.innerHTML = `<i class="bi bi-x-circle-fill"></i> Erro de comunicaÃ§Ã£o com o backend.`;
+            console.error('Error testing connection:', error);
+        });
+    }
+
+    // Initialize models list on load
+    document.addEventListener('DOMContentLoaded', () => {
+        updateModels();
+    });
+</script>
+{% endblock %}
+

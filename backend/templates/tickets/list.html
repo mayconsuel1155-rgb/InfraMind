@@ -1,0 +1,274 @@
+{% extends 'base.html' %}
+
+{% block title %}InfraMind - Chamados{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h1>Chamados de Suporte</h1>
+        <p class="text-muted mb-0">Gestão e acompanhamento de incidentes da empresa</p>
+    </div>
+    {% if request.user.role != 'viewer' %}
+    <button type="button" class="btn btn-premium" data-bs-toggle="modal" data-bs-target="#modalNovoChamado">
+        <i class="bi bi-plus-lg me-1"></i> Novo Chamado
+    </button>
+    {% endif %}
+</div>
+
+<!-- Filters Bar -->
+<div class="glass-card mb-4 p-3">
+    <form method="get" class="row g-3 align-items-center">
+        <div class="col-md-3">
+            <label class="form-label text-muted small fw-semibold">Status</label>
+            <select name="status" class="form-select bg-dark text-white border-secondary border-opacity-50">
+                <option value="">Todos</option>
+                <option value="open" {% if status_filter == 'open' %}selected{% endif %}>Aberto</option>
+                <option value="in_progress" {% if status_filter == 'in_progress' %}selected{% endif %}>Em Andamento</option>
+                <option value="resolved" {% if status_filter == 'resolved' %}selected{% endif %}>Resolvido</option>
+            </select>
+        </div>
+        
+        <div class="col-md-3">
+            <label class="form-label text-muted small fw-semibold">Prioridade</label>
+            <select name="priority" class="form-select bg-dark text-white border-secondary border-opacity-50">
+                <option value="">Todas</option>
+                <option value="low" {% if priority_filter == 'low' %}selected{% endif %}>Baixa</option>
+                <option value="medium" {% if priority_filter == 'medium' %}selected{% endif %}>Média</option>
+                <option value="high" {% if priority_filter == 'high' %}selected{% endif %}>Alta</option>
+                <option value="critical" {% if priority_filter == 'critical' %}selected{% endif %}>Crítica</option>
+            </select>
+        </div>
+        
+        <div class="col-md-3 align-self-end">
+            <button type="submit" class="btn btn-premium w-100 py-2">
+                <i class="bi bi-filter me-1"></i> Filtrar Chamados
+            </button>
+        </div>
+        
+        {% if status_filter or priority_filter %}
+        <div class="col-md-3 align-self-end">
+            <a href="{% url 'tickets_list' %}" class="btn btn-outline-secondary w-100 py-2 text-white border-secondary">
+                Limpar Filtros
+            </a>
+        </div>
+        {% endif %}
+    </form>
+</div>
+
+<!-- Tickets Table -->
+<div class="glass-card">
+    {% if tickets %}
+    <div class="table-responsive">
+        <table class="table table-dark table-hover table-borderless align-middle mb-0">
+            <thead>
+                <tr class="text-muted" style="border-bottom: 1px solid rgba(255,255,255,0.08);">
+                    <th>ID</th>
+                    <th>Título</th>
+                    <th>Prioridade</th>
+                    <th>Status</th>
+                    <th>Técnico Designado</th>
+                    <th>Abertura</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ticket in tickets %}
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
+                    <td class="text-muted fw-bold">#{{ ticket.id }}</td>
+                    <td>
+                        <span class="d-block fw-bold text-white fs-6">{{ ticket.title }}</span>
+                        {% if ticket.alert %}
+                        <span class="text-muted small d-block mt-1">
+                            <i class="bi bi-laptop me-1"></i> {{ ticket.alert.machine.hostname }} (Alerta: {{ ticket.alert.type }})
+                        </span>
+                        {% elif ticket.machine %}
+                        <span class="text-muted small d-block mt-1">
+                            <i class="bi bi-laptop me-1"></i> {{ ticket.machine.hostname }}
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge 
+                            {% if ticket.priority == 'critical' %}bg-danger
+                            {% elif ticket.priority == 'high' %}bg-warning text-dark
+                            {% elif ticket.priority == 'medium' %}bg-primary
+                            {% else %}bg-secondary{% endif %} bg-opacity-25 fw-semibold px-2 py-1">
+                            {{ ticket.get_priority_display }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge-status 
+                            {% if ticket.status == 'open' %}status-critical
+                            {% elif ticket.status == 'in_progress' %}status-warning
+                            {% else %}status-online{% endif %}">
+                            {{ ticket.get_status_display }}
+                        </span>
+                    </td>
+                    <td class="text-muted">
+                        {% if ticket.assigned_to %}
+                        <i class="bi bi-person-fill me-1 text-cyan"></i> {{ ticket.assigned_to.email }}
+                        {% else %}
+                        <span class="text-muted italic small"><i class="bi bi-person-dash me-1"></i> Não designado</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-muted" style="font-size: 0.9rem;">
+                        {{ ticket.created_at|date:"d/m/Y H:i" }}
+                    </td>
+                    <td>
+                        <a href="{% url 'ticket_detail' ticket.pk %}" class="btn btn-sm btn-outline-info py-2">
+                            <i class="bi bi-eye-fill"></i> Gerenciar
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5 text-muted">
+        <i class="bi bi-shield-check text-success" style="font-size: 3rem;"></i>
+        <p class="mt-2 mb-0">Nenhum chamado correspondente aos filtros foi encontrado.</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modal Novo Chamado -->
+{% if request.user.role != 'viewer' %}
+<div class="modal fade" id="modalNovoChamado" tabindex="-1" aria-labelledby="modalNovoChamadoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-white border-secondary" style="background: rgba(22, 26, 41, 0.95) !important; backdrop-filter: blur(15px); border: 1px solid var(--card-border);">
+            <div class="modal-header border-secondary border-opacity-50">
+                <h5 class="modal-title d-flex align-items-center gap-2" id="modalNovoChamadoLabel">
+                    <i class="bi bi-ticket-perforated text-cyan" style="color: var(--accent-cyan);"></i> Novo Chamado de Suporte
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post">
+                {% csrf_token %}
+                <div class="modal-body d-flex flex-column gap-3">
+                    <div>
+                        <label class="form-label text-white-50 small fw-bold">Título do Incidente</label>
+                        {{ form.title }}
+                        {% if form.title.errors %}<div class="text-danger small mt-1">{{ form.title.errors|striptags }}</div>{% endif %}
+                    </div>
+                    <div>
+                        <label class="form-label text-white-50 small fw-bold">Descrição</label>
+                        {{ form.description }}
+                        {% if form.description.errors %}<div class="text-danger small mt-1">{{ form.description.errors|striptags }}</div>{% endif %}
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label text-white-50 small fw-bold">Prioridade</label>
+                            {{ form.priority }}
+                            {% if form.priority.errors %}<div class="text-danger small mt-1">{{ form.priority.errors|striptags }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-white-50 small fw-bold">Máquina (Opcional)</label>
+                            {{ form.machine }}
+                            {% if form.machine.errors %}<div class="text-danger small mt-1">{{ form.machine.errors|striptags }}</div>{% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        {% if request.user.role == 'superadmin' %}
+                        <div class="col-md-6">
+                            <label class="form-label text-white-50 small fw-bold">Cliente / Empresa</label>
+                            {{ form.company }}
+                            {% if form.company.errors %}<div class="text-danger small mt-1">{{ form.company.errors|striptags }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-white-50 small fw-bold">Técnico Designado</label>
+                            {{ form.assigned_to }}
+                            {% if form.assigned_to.errors %}<div class="text-danger small mt-1">{{ form.assigned_to.errors|striptags }}</div>{% endif %}
+                        </div>
+                        {% else %}
+                        {{ form.company }}
+                        <div class="col-12">
+                            <label class="form-label text-white-50 small fw-bold">Técnico Designado</label>
+                            {{ form.assigned_to }}
+                            {% if form.assigned_to.errors %}<div class="text-danger small mt-1">{{ form.assigned_to.errors|striptags }}</div>{% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary border-opacity-50">
+                    <button type="button" class="btn btn-outline-secondary text-white border-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-premium">Abrir Chamado</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% if form.errors %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        var myModal = new bootstrap.Modal(document.getElementById('modalNovoChamado'));
+        myModal.show();
+    });
+</script>
+{% endif %}
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const selectCompany = document.getElementById("id_manual_ticket_company");
+    const selectMachine = document.querySelector('[name="machine"]');
+    const selectAssignedTo = document.querySelector('[name="assigned_to"]');
+
+    if (selectCompany && selectMachine && selectAssignedTo) {
+        function filterDropdowns() {
+            const selectedIndex = selectCompany.selectedIndex;
+            if (selectedIndex === -1) return;
+            
+            const selectedText = selectCompany.options[selectedIndex].text;
+            const hasSelection = selectCompany.value !== "";
+
+            // Filter machines
+            for (let i = 0; i < selectMachine.options.length; i++) {
+                const opt = selectMachine.options[i];
+                if (opt.value === "") {
+                    opt.style.display = ""; // Always show empty label
+                } else if (!hasSelection) {
+                    opt.style.display = ""; // Show all if no company selected
+                } else {
+                    if (opt.text.includes(`(${selectedText})`)) {
+                        opt.style.display = "";
+                    } else {
+                        opt.style.display = "none";
+                    }
+                }
+            }
+
+            // Filter assigned_to (collaborators)
+            for (let i = 0; i < selectAssignedTo.options.length; i++) {
+                const opt = selectAssignedTo.options[i];
+                if (opt.value === "") {
+                    opt.style.display = ""; // Always show empty label
+                } else if (!hasSelection) {
+                    opt.style.display = ""; // Show all if no company selected
+                } else {
+                    if (opt.text.includes(`(${selectedText})`)) {
+                        opt.style.display = "";
+                    } else {
+                        opt.style.display = "none";
+                    }
+                }
+            }
+
+            // Reset selected values if the current selected option is now hidden
+            if (selectMachine.value !== "" && selectMachine.options[selectMachine.selectedIndex].style.display === "none") {
+                selectMachine.value = "";
+            }
+            if (selectAssignedTo.value !== "" && selectAssignedTo.options[selectAssignedTo.selectedIndex].style.display === "none") {
+                selectAssignedTo.value = "";
+            }
+        }
+
+        selectCompany.addEventListener("change", filterDropdowns);
+        // Run once on load to ensure sync if errors returned
+        filterDropdowns();
+    }
+});
+</script>
+{% endif %}
+{% endblock %}

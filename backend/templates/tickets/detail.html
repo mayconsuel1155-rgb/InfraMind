@@ -1,0 +1,837 @@
+{% extends 'base.html' %}
+
+{% block title %}InfraMind - Chamado #{{ ticket.id }}{% endblock %}
+
+{% block content %}
+<style>
+    /* Screen Styles */
+    .abnt-container-wrapper {
+        background: #0f111a;
+        padding: 20px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        margin-top: 15px;
+        overflow-x: auto;
+    }
+
+    .abnt-document {
+        background-color: #ffffff !important;
+        color: #2d3748 !important;
+        font-family: 'Outfit', Arial, sans-serif !important;
+        font-size: 11pt !important;
+        line-height: 1.6 !important;
+        padding: 2.5rem !important;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        border: 1px solid #d3d3d3;
+        border-radius: 4px;
+        min-height: 297mm;
+        width: 100%;
+        max-width: 800px;
+        margin: 0 auto;
+        box-sizing: border-box;
+    }
+
+    @media (max-width: 768px) {
+        .abnt-document {
+            padding: 1.5rem 1rem !important;
+            font-size: 10pt !important;
+            box-shadow: none;
+            border: none;
+        }
+    }
+
+    /* Top colored bar from image */
+    .report-top-bar {
+        background-color: #2b9eb3 !important;
+        height: 6px;
+        width: 100%;
+        margin-top: -1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .report-header-flex {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 2px solid #2b9eb3;
+        padding-bottom: 15px;
+        margin-bottom: 20px;
+    }
+
+    .report-logo-box {
+        background-color: #2b9eb3;
+        color: #ffffff !important;
+        padding: 10px 20px;
+        font-weight: 700;
+        font-size: 1.25rem;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        display: inline-block;
+    }
+
+    .report-company-logo-img {
+        max-height: 55px;
+        max-width: 180px;
+        object-fit: contain;
+    }
+
+    /* Metadata details block */
+    .report-metadata-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px 20px;
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 6px;
+        margin-bottom: 25px;
+        font-size: 9.5pt;
+        border: 1px solid #e2e8f0;
+    }
+
+    @media (max-width: 576px) {
+        .report-metadata-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .report-metadata-item {
+        color: #4a5568 !important;
+    }
+
+    .report-metadata-item strong {
+        color: #1a202c !important;
+    }
+
+    /* Status columns block from image */
+    .report-status-block {
+        margin-bottom: 25px;
+    }
+
+    .report-status-title {
+        font-weight: bold;
+        color: #2b9eb3 !important;
+        font-size: 10.5pt;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+    }
+
+    .report-status-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        border: 1px solid #cbd5e0;
+        border-radius: 6px;
+        overflow: hidden;
+    }
+
+    .status-col {
+        text-align: center;
+        padding: 12px 6px;
+        font-size: 9.5pt;
+        font-weight: 700;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        border-right: 1px solid #cbd5e0;
+        background-color: #f8f9fa;
+        color: #718096 !important;
+    }
+
+    .status-col:last-child {
+        border-right: none;
+    }
+
+    /* On Track - Green */
+    .status-col-resolved.active-status {
+        background-color: #c6f6d5 !important;
+        color: #22543d !important;
+    }
+
+    /* At Risk - Yellow/Warning */
+    .status-col-progress.active-status {
+        background-color: #feebc8 !important;
+        color: #744210 !important;
+    }
+
+    /* Off Track - Pink/Red */
+    .status-col-open.active-status {
+        background-color: #fed7d7 !important;
+        color: #742a2a !important;
+    }
+
+    .status-circle {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #ffffff;
+        border: 2px solid #a0aec0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .active-status .status-circle {
+        border-color: currentColor;
+    }
+
+    .status-check-mark {
+        font-size: 9pt;
+        font-weight: bold;
+        line-height: 1;
+    }
+
+    /* Paragraph and Body styling */
+    .abnt-document p {
+        text-indent: 0 !important;
+        margin-top: 0 !important;
+        margin-bottom: 12pt !important;
+        color: #4a5568 !important;
+        text-align: justify !important;
+    }
+
+    /* Heading levels styling */
+    .abnt-document h1,
+    .abnt-document h2,
+    .abnt-document h3,
+    .abnt-document h4 {
+        color: #2b9eb3 !important;
+        font-family: 'Outfit', Arial, sans-serif !important;
+        font-weight: bold !important;
+        text-indent: 0 !important;
+        margin-top: 24pt !important;
+        margin-bottom: 10pt !important;
+        text-align: left !important;
+        text-transform: uppercase !important;
+        font-size: 11pt !important;
+        border-bottom: none !important;
+        padding-bottom: 0 !important;
+    }
+
+    /* Tables */
+    .abnt-document table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+        margin-top: 15px !important;
+        margin-bottom: 15px !important;
+    }
+
+    .abnt-document th {
+        background-color: #2b9eb3 !important;
+        color: #ffffff !important;
+        font-weight: bold !important;
+        text-transform: uppercase !important;
+        font-size: 9pt !important;
+        padding: 10px !important;
+        border: 1px solid #cbd5e0 !important;
+    }
+
+    .abnt-document td {
+        padding: 10px !important;
+        font-size: 9pt !important;
+        border: 1px solid #cbd5e0 !important;
+        background-color: #ffffff !important;
+        color: #4a5568 !important;
+    }
+
+    .abnt-document tr:nth-child(even) td {
+        background-color: #f7fafc !important;
+    }
+
+    /* Code blocks and inline command styling inside the white report page */
+    .abnt-document pre {
+        background-color: #f1f5f9 !important;
+        border: 1px solid #cbd5e0 !important;
+        border-radius: 6px !important;
+        padding: 12px !important;
+        overflow-x: auto !important;
+        margin-top: 10px !important;
+        margin-bottom: 15px !important;
+    }
+
+    .abnt-document code {
+        font-family: 'Consolas', 'Courier New', Courier, monospace !important;
+        font-size: 9.5pt !important;
+        color: #1a202c !important;
+        background-color: #f1f5f9 !important;
+        padding: 2px 5px !important;
+        border-radius: 4px !important;
+        border: 1px solid #e2e8f0 !important;
+        font-weight: 500 !important;
+    }
+
+    .abnt-document pre code {
+        padding: 0 !important;
+        background-color: transparent !important;
+        border-radius: 0 !important;
+        border: none !important;
+        font-weight: normal !important;
+    }
+
+    .abnt-document hr {
+        border: 0 !important;
+        border-top: 1px solid #cbd5e0 !important;
+        margin: 20px 0 !important;
+        opacity: 0.5 !important;
+    }
+
+    .abnt-document ul,
+    .abnt-document ol {
+        margin-bottom: 12pt !important;
+        padding-left: 20px !important;
+        color: #4a5568 !important;
+    }
+
+    .abnt-document li {
+        text-indent: 0 !important;
+        margin-bottom: 6pt !important;
+        line-height: 1.5 !important;
+        color: #4a5568 !important;
+    }
+
+    .abnt-document li p {
+        text-indent: 0 !important;
+        display: inline;
+    }
+
+    /* Printing layout modifications */
+    @media print {
+        body.printing-report {
+            background: #ffffff !important;
+            color: #000000 !important;
+        }
+        body.printing-report .sidebar,
+        body.printing-report .page-header,
+        body.printing-report .glass-card:not(:has(#aiReportContent)):not(:has(#aiDiagnosisCard)),
+        body.printing-report .d-print-none,
+        body.printing-report button,
+        body.printing-report form,
+        body.printing-report .text-muted,
+        body.printing-report .navbar,
+        body.printing-report .glass-card > div:first-child {
+            display: none !important;
+        }
+        
+        body.printing-report .main-content {
+            margin-left: 0 !important;
+            padding: 0 !important;
+        }
+        
+        body.printing-report .glass-card {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+
+        body.printing-report .abnt-container-wrapper {
+            background: transparent !important;
+            border: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            overflow: visible !important;
+        }
+
+        body.printing-report .print-active-target {
+            display: block !important;
+        }
+
+        body.printing-report .abnt-container-wrapper:not(.print-active-target) {
+            display: none !important;
+        }
+
+        body.printing-report .abnt-document {
+            border: none !important;
+            box-shadow: none !important;
+            padding: 2.5rem !important;
+            margin: 0 !important;
+            max-width: 100% !important;
+            min-height: 0 !important;
+            background: #ffffff !important;
+            color: #000000 !important;
+        }
+        
+        body.printing-report .abnt-document::after {
+            content: "" !important;
+            display: block !important;
+            border-bottom: 4px solid #2b9eb3 !important;
+            margin-top: 30px !important;
+        }
+    }
+</style>
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <a href="{% url 'tickets_list' %}" class="text-decoration-none text-muted mb-2 d-inline-block">
+            <i class="bi bi-chevron-left"></i> Voltar para Chamados
+        </a>
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+            <h1 class="mb-0">Chamado #{{ ticket.id }}</h1>
+            <span class="badge
+                {% if ticket.priority == 'critical' %}bg-danger
+                {% elif ticket.priority == 'high' %}bg-warning text-dark
+                {% elif ticket.priority == 'medium' %}bg-primary
+                {% else %}bg-secondary{% endif %} bg-opacity-25 fw-semibold px-3 py-2 fs-6">
+                Prioridade {{ ticket.get_priority_display }}
+            </span>
+            <span id="ticket-status-badge" class="badge-status
+                {% if ticket.status == 'open' %}status-critical
+                {% elif ticket.status == 'in_progress' %}status-warning
+                {% else %}status-online{% endif %}">
+                {{ ticket.get_status_display }}
+            </span>
+        </div>
+        <p class="text-muted mt-2 mb-0">Criado em {{ ticket.created_at|date:"d/m/Y H:i:s" }}</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="glass-card mb-4">
+            <h3 class="fw-bold text-white mb-3">{{ ticket.title }}</h3>
+            <h6 class="text-muted fw-semibold uppercase mt-4 mb-2" style="font-size: 0.8rem; letter-spacing: 1px;">Descrição do Chamado</h6>
+            <div class="p-3 rounded-3 text-light" style="background: rgba(15,17,26,0.6); border: 1px solid var(--card-border); font-family: monospace; white-space: pre-wrap; font-size: 0.95rem;">{{ ticket.description }}</div>
+        </div>
+
+        {% include 'tickets/partials/timer_section.html' %}
+
+        {% if ticket.alert %}
+        <div class="glass-card">
+            <h5 class="fw-bold mb-4 text-warning"><i class="bi bi-exclamation-triangle-fill me-2"></i> Alerta Causador</h5>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <span class="text-muted small d-block">Servidor Afetado</span>
+                    <a href="{% url 'machine_detail' ticket.alert.machine.pk %}" class="fw-bold text-white text-decoration-none">
+                        <i class="bi bi-laptop me-1"></i> {{ ticket.alert.machine.hostname }}
+                    </a>
+                </div>
+                <div class="col-md-6">
+                    <span class="text-muted small d-block">Tipo de Incidente</span>
+                    <span class="fw-semibold text-white">{{ ticket.alert.type }}</span>
+                </div>
+                <div class="col-md-6">
+                    <span class="text-muted small d-block">Status do Alerta</span>
+                    {% if ticket.alert.is_resolved %}
+                    <span class="text-success small"><i class="bi bi-check-circle-fill"></i> Resolvido em {{ ticket.alert.resolved_at|date:"d/m H:i" }}</span>
+                    {% else %}
+                    <span class="text-danger small"><i class="bi bi-circle-fill"></i> Ativo</span>
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    <span class="text-muted small d-block">Gravidade</span>
+                    <span class="badge {% if ticket.alert.severity == 'critical' %}bg-danger{% else %}bg-warning text-dark{% endif %} bg-opacity-25 fw-semibold">{{ ticket.alert.get_severity_display }}</span>
+                </div>
+            </div>
+        </div>
+        {% elif ticket.machine %}
+        <div class="glass-card">
+            <h5 class="fw-bold mb-4 text-info"><i class="bi bi-laptop me-2"></i> Dispositivo Vinculado</h5>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <span class="text-muted small d-block">Servidor Afetado</span>
+                    <a href="{% url 'machine_detail' ticket.machine.pk %}" class="fw-bold text-white text-decoration-none">
+                        <i class="bi bi-laptop me-1"></i> {{ ticket.machine.hostname }}
+                    </a>
+                </div>
+                <div class="col-md-6">
+                    <span class="text-muted small d-block">Sistema Operacional</span>
+                    <span class="fw-semibold text-white">{{ ticket.machine.operating_system }}</span>
+                </div>
+                <div class="col-md-6">
+                    <span class="text-muted small d-block">Endereço IP</span>
+                    <span class="fw-semibold text-white">{{ ticket.machine.ip_address }}</span>
+                </div>
+                <div class="col-md-6">
+                    <span class="text-muted small d-block">Status da Máquina</span>
+                    <span class="badge-status {% if ticket.machine.status == 'online' %}status-online{% elif ticket.machine.status == 'offline' %}status-offline{% elif ticket.machine.status == 'warning' %}status-warning{% else %}status-critical{% endif %}">
+                        {{ ticket.machine.get_status_display }}
+                    </span>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="glass-card mt-4">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4">
+                <h5 class="fw-bold mb-0 text-info">
+                    <i class="bi bi-file-earmark-text me-2"></i> Relatório Operacional por IA (ABNT NBR 10719)
+                </h5>
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    {% if ticket.ai_report %}
+                    <button type="button" class="btn btn-sm btn-light text-dark fw-semibold" onclick="printReport('aiReportContent')">
+                        <i class="bi bi-printer me-1"></i> Imprimir PDF
+                    </button>
+                    {% endif %}
+                    {% if request.user.role != 'viewer' %}
+                    <form method="post" class="m-0">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="generate_ai_report">
+                        <button type="submit" class="btn btn-sm btn-outline-info">
+                            <i class="bi bi-stars me-1"></i> Gerar/Atualizar relatório
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if ticket.ai_report %}
+            {{ ticket.ai_report|json_script:"ai-report-data" }}
+            <div id="aiReportContent"></div>
+            <p class="text-muted small mt-3 mb-0">
+                Gerado em {{ ticket.ai_report_generated_at|date:"d/m/Y H:i" }}
+            </p>
+            {% else %}
+            <div class="text-muted">
+                Registre apontamentos e depois gere o relatório para consolidar o que foi verificado e o que o alerta indicou.
+            </div>
+            {% endif %}
+        </div>
+
+        {% if ticket.alert %}
+        <div class="glass-card mt-4" id="aiDiagnosisCard">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4">
+                <h5 class="fw-bold mb-0 text-info">
+                    <i class="bi bi-robot me-2"></i> Diagnóstico Assistido por IA
+                </h5>
+                <div class="d-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-sm btn-light text-dark fw-semibold d-none" id="btnPrintDiagnosis" onclick="printReport('diagnosisContent')">
+                        <i class="bi bi-printer me-1"></i> Imprimir PDF
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-info" id="btnDiagnosis" onclick="generateDiagnosis()">
+                        <i class="bi bi-magic me-1"></i> Gerar Diagnóstico
+                    </button>
+                </div>
+            </div>
+
+            <div id="diagnosisContent" class="text-muted" style="font-size: 0.95rem; line-height: 1.6;">
+                Clique no botão acima para analisar a causa raiz do incidente e sugerir planos de ação recomendados para esta máquina.
+            </div>
+
+            <div id="diagnosisLoader" class="d-none text-center py-4">
+                <div class="spinner-border text-info mb-3" role="status" style="width: 2.5rem; height: 2.5rem;"></div>
+                <div class="text-light small">A IA está analisando as especificações do servidor e as telemetrias acumuladas...</div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="col-lg-4">
+        <div class="glass-card mb-4">
+            <h5 class="fw-bold mb-4"><i class="bi bi-gear-fill me-2"></i> Alterar Status</h5>
+            {% if request.user.role != 'viewer' %}
+            <form method="post" class="d-flex flex-column gap-3">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="update_status">
+                <div>
+                    <select id="ticket-status-select" name="status" class="form-select bg-dark text-white border-secondary">
+                        <option value="open" {% if ticket.status == 'open' %}selected{% endif %}>Aberto</option>
+                        <option value="in_progress" {% if ticket.status == 'in_progress' %}selected{% endif %}>Em Andamento</option>
+                        <option value="resolved" {% if ticket.status == 'resolved' %}selected{% endif %}>Resolvido</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-premium w-100 py-2">
+                    <i class="bi bi-check-circle me-1"></i> Atualizar Status
+                </button>
+            </form>
+            {% else %}
+            <p class="text-muted small mb-0">Você não tem privilégios de edição para atualizar o status.</p>
+            {% endif %}
+        </div>
+
+        <div class="glass-card">
+            <h5 class="fw-bold mb-4"><i class="bi bi-person-badge-fill me-2"></i> Técnico Responsável</h5>
+
+            <div class="mb-4">
+                {% if ticket.assigned_to %}
+                <div class="d-flex align-items-center gap-2 p-3 rounded-3" style="background: rgba(0, 242, 254, 0.05); border: 1px solid rgba(0, 242, 254, 0.15);">
+                    <i class="bi bi-person-fill text-cyan" style="font-size: 1.5rem;"></i>
+                    <div>
+                        <span class="d-block fw-bold text-white text-truncate" style="max-width: 220px;">{{ ticket.assigned_to.email }}</span>
+                        <small class="text-muted">{{ ticket.assigned_to.get_role_display }}</small>
+                    </div>
+                </div>
+                {% else %}
+                <div class="d-flex align-items-center gap-2 p-3 rounded-3 bg-secondary bg-opacity-10 border border-secondary border-opacity-25 text-muted">
+                    <i class="bi bi-person-dash" style="font-size: 1.5rem;"></i>
+                    <div>
+                        <span class="d-block fw-bold">Não atribuído</span>
+                        <small class="small">Sem técnico no momento</small>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if request.user.role != 'viewer' %}
+            <form method="post" class="d-flex flex-column gap-3">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="assign_tech">
+                <div>
+                    <label class="form-label text-muted small">Designar para:</label>
+                    <select name="assigned_to" class="form-select bg-dark text-white border-secondary">
+                        <option value="">-- Remover atribuição --</option>
+                        {% for tech in technicians %}
+                            {% if tech.role != 'viewer' %}
+                            <option value="{{ tech.id }}" {% if ticket.assigned_to.id == tech.id %}selected{% endif %}>
+                                {{ tech.email }} ({{ tech.get_role_display }})
+                            </option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-outline-info w-100 py-2 border-info text-cyan">
+                    <i class="bi bi-person-check me-1"></i> Atribuir Técnico
+                </button>
+            </form>
+            {% else %}
+            <p class="text-muted small mb-0">Você não tem privilégios de edição para reatribuir o chamado.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+    function renderStoredReport() {
+        const reportEl = document.getElementById('aiReportContent');
+        if (!reportEl) {
+            return;
+        }
+
+        const dataEl = document.getElementById('ai-report-data');
+        if (!dataEl) return;
+        
+        let markdown = JSON.parse(dataEl.textContent);
+        if (markdown) {
+            // Decodes any literal escape sequences in case the database contains them
+            markdown = markdown.replace(/\\([uU][0-9a-fA-F]{4})/g, (match, grp) => {
+                return String.fromCharCode(parseInt(grp.substring(1), 16));
+            });
+            
+            // Remove everything between the first "---" and the second "---"
+            let cleanedMarkdown = markdown.replace(/^---\s*[\s\S]*?---\s*/, '');
+            // Remove redundant leading H1 heading inside the report sheet
+            cleanedMarkdown = cleanedMarkdown.replace(/^\s*#\s+.*$/m, '');
+            
+            const companyName = "{{ ticket.company.name|escapejs }}";
+            const companyLogoUrl = "{% if ticket.company.logo %}{{ ticket.company.logo.url|escapejs }}{% endif %}";
+            const ticketTitle = "{{ ticket.title|escapejs }}";
+            const ticketId = "{{ ticket.id }}";
+            const assignedTech = "{{ ticket.assigned_to.email|default:'Não designado'|escapejs }}";
+            const reportDate = "{{ ticket.ai_report_generated_at|date:'d/m/Y H:i' }}";
+            const ticketStatus = "{{ ticket.status }}";
+            
+            let logoHtml = '';
+            if (companyLogoUrl) {
+                logoHtml = `<img src="${companyLogoUrl}" alt="${companyName}" class="report-company-logo-img">`;
+            } else {
+                logoHtml = `<div class="report-logo-box">//${companyName.toUpperCase()}</div>`;
+            }
+            
+            const isResolved = ticketStatus === 'resolved';
+            const isProgress = ticketStatus === 'in_progress';
+            const isOpen = ticketStatus === 'open';
+            
+            const statusHtml = `
+                <div class="report-status-block">
+                    <div class="report-status-title">Status do Chamado</div>
+                    <div class="report-status-grid">
+                        <div class="status-col status-col-resolved ${isResolved ? 'active-status' : ''}">
+                            <span>Resolvido</span>
+                            <div class="status-circle">
+                                ${isResolved ? '<span class="status-check-mark">✓</span>' : ''}
+                            </div>
+                        </div>
+                        <div class="status-col status-col-progress ${isProgress ? 'active-status' : ''}">
+                            <span>Em Andamento</span>
+                            <div class="status-circle">
+                                ${isProgress ? '<span class="status-check-mark">✓</span>' : ''}
+                            </div>
+                        </div>
+                        <div class="status-col status-col-open ${isOpen ? 'active-status' : ''}">
+                            <span>Aberto / Pendente</span>
+                            <div class="status-circle">
+                                ${isOpen ? '<span class="status-check-mark">✓</span>' : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            reportEl.innerHTML = `
+                <div class="abnt-container-wrapper">
+                    <div class="abnt-document">
+                        <div class="report-top-bar"></div>
+                        <div class="report-header-flex">
+                            <div>
+                                <h2 class="m-0" style="color: #2b9eb3 !important; font-size: 1.5rem !important; font-weight: bold;">RELATÓRIO OPERACIONAL DE INCIDENTE</h2>
+                                <p class="text-muted m-0" style="font-size: 0.85rem;">Plataforma InfraMind — Central de Suporte</p>
+                            </div>
+                            <div class="report-logo-area">
+                                ${logoHtml}
+                            </div>
+                        </div>
+                        
+                        <div class="report-metadata-grid">
+                            <div class="report-metadata-item"><strong>Chamado:</strong> #${ticketId} - ${ticketTitle}</div>
+                            <div class="report-metadata-item"><strong>Técnico Responsável:</strong> ${assignedTech}</div>
+                            <div class="report-metadata-item"><strong>Organização / Cliente:</strong> ${companyName}</div>
+                            <div class="report-metadata-item"><strong>Data do Relatório:</strong> ${reportDate}</div>
+                        </div>
+                        
+                        ${statusHtml}
+                        
+                        <div class="report-markdown-body">
+                            ${marked.parse(cleanedMarkdown)}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+    }
+
+    function printReport(elementId) {
+        const reportEl = document.getElementById(elementId);
+        if (!reportEl) return;
+        
+        const wrapper = reportEl.querySelector('.abnt-container-wrapper') || reportEl.closest('.abnt-container-wrapper') || reportEl;
+        
+        document.body.classList.add('printing-report');
+        wrapper.classList.add('print-active-target');
+        
+        window.print();
+        
+        wrapper.classList.remove('print-active-target');
+        document.body.classList.remove('printing-report');
+    }
+
+    function generateDiagnosis() {
+        const btn = document.getElementById('btnDiagnosis');
+        const printBtn = document.getElementById('btnPrintDiagnosis');
+        const loader = document.getElementById('diagnosisLoader');
+        const content = document.getElementById('diagnosisContent');
+
+        content.classList.add('d-none');
+        if (printBtn) printBtn.classList.add('d-none');
+        loader.classList.remove('d-none');
+        btn.disabled = true;
+
+        fetch("/api/alerts/{{ ticket.alert.pk }}/ai-diagnosis/")
+        .then(response => response.json())
+        .then(data => {
+            loader.classList.add('d-none');
+            btn.disabled = false;
+
+            if (data.status === 'ok') {
+                let diagnosisText = data.diagnosis;
+                // Decodes any literal escape sequences in case the database contains them
+                diagnosisText = diagnosisText.replace(/\\([uU][0-9a-fA-F]{4})/g, (match, grp) => {
+                    return String.fromCharCode(parseInt(grp.substring(1), 16));
+                });
+
+                let cleanedDiagnosis = diagnosisText.replace(/^---\s*[\s\S]*?---\s*/, '');
+                // Remove redundant leading H1 heading inside the report sheet
+                cleanedDiagnosis = cleanedDiagnosis.replace(/^\s*#\s+.*$/m, '');
+                
+                const companyName = "{{ ticket.company.name|escapejs }}";
+                const companyLogoUrl = "{% if ticket.company.logo %}{{ ticket.company.logo.url|escapejs }}{% endif %}";
+                const machineHostname = "{{ ticket.machine.hostname|escapejs }}";
+                const alertType = "{{ ticket.alert.type|escapejs }}";
+                const alertSeverity = data.severity || "warning";
+                const reportDate = new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+                
+                let logoHtml = '';
+                if (companyLogoUrl) {
+                    logoHtml = `<img src="${companyLogoUrl}" alt="${companyName}" class="report-company-logo-img">`;
+                } else {
+                    logoHtml = `<div class="report-logo-box">//${companyName.toUpperCase()}</div>`;
+                }
+                
+                const isInfo = alertSeverity === 'info';
+                const isWarning = alertSeverity === 'warning';
+                const isCritical = alertSeverity === 'critical' || alertSeverity === 'danger';
+                
+                const severityHtml = `
+                    <div class="report-status-block">
+                        <div class="report-status-title">Severidade do Alerta</div>
+                        <div class="report-status-grid">
+                            <div class="status-col status-col-resolved ${isInfo ? 'active-status' : ''}">
+                                <span>Informativo</span>
+                                <div class="status-circle">
+                                    ${isInfo ? '<span class="status-check-mark">✓</span>' : ''}
+                                </div>
+                            </div>
+                            <div class="status-col status-col-progress ${isWarning ? 'active-status' : ''}">
+                                <span>Aviso</span>
+                                <div class="status-circle">
+                                    ${isWarning ? '<span class="status-check-mark">✓</span>' : ''}
+                                </div>
+                            </div>
+                            <div class="status-col status-col-open ${isCritical ? 'active-status' : ''}">
+                                <span>Crítico</span>
+                                <div class="status-circle">
+                                    ${isCritical ? '<span class="status-check-mark">✓</span>' : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                content.classList.remove('d-none');
+                content.innerHTML = `
+                    <div class="abnt-container-wrapper">
+                        <div class="abnt-document">
+                            <div class="report-top-bar"></div>
+                            <div class="report-header-flex">
+                                <div>
+                                    <h2 class="m-0" style="color: #2b9eb3 !important; font-size: 1.5rem !important; font-weight: bold;">DIAGNÓSTICO TÉCNICO DE INCIDENTE</h2>
+                                    <p class="text-muted m-0" style="font-size: 0.85rem;">Plataforma InfraMind — Monitoramento Assistido</p>
+                                </div>
+                                <div class="report-logo-area">
+                                    ${logoHtml}
+                                </div>
+                            </div>
+                            
+                            <div class="report-metadata-grid">
+                                <div class="report-metadata-item"><strong>Dispositivo Afetado:</strong> ${machineHostname}</div>
+                                <div class="report-metadata-item"><strong>Tipo de Alerta:</strong> ${alertType}</div>
+                                <div class="report-metadata-item"><strong>Organização / Cliente:</strong> ${companyName}</div>
+                                <div class="report-metadata-item"><strong>Data da Análise:</strong> ${reportDate}</div>
+                            </div>
+                            
+                            ${severityHtml}
+                            
+                            <div class="report-markdown-body">
+                                ${marked.parse(cleanedDiagnosis)}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                if (printBtn) printBtn.classList.remove('d-none');
+                btn.innerHTML = `<i class="bi bi-arrow-clockwise me-1"></i> Atualizar Diagnóstico`;
+            } else if (data.status === 'not_configured') {
+                content.classList.remove('d-none');
+                content.innerHTML = `<div class="alert alert-warning border-warning bg-warning-subtle text-warning mt-3">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i> ${data.message}
+                </div>`;
+            } else {
+                content.classList.remove('d-none');
+                content.innerHTML = `<div class="alert alert-danger border-danger bg-danger-subtle text-danger mt-3">
+                    <i class="bi bi-x-circle-fill me-2"></i> ${data.message}
+                </div>`;
+            }
+        })
+        .catch(error => {
+            loader.classList.add('d-none');
+            btn.disabled = false;
+            content.classList.remove('d-none');
+            content.innerHTML = `<div class="alert alert-danger border-danger bg-danger-subtle text-danger mt-3">
+                <i class="bi bi-x-circle-fill me-2"></i> Erro ao conectar com o servidor para obter diagnóstico.
+            </div>`;
+            console.error('AI diagnosis error:', error);
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', renderStoredReport);
+</script>
+{% endblock %}
