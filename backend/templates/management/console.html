@@ -187,6 +187,30 @@
     .hover-white:hover {
         color: #ffffff !important;
     }
+
+    /* Botão de Download do Instalador — estilo Milvus */
+    .btn-installer {
+        background: linear-gradient(135deg, rgba(0, 242, 254, 0.08), rgba(79, 172, 254, 0.08));
+        border: 1px solid rgba(0, 242, 254, 0.25);
+        color: var(--accent-cyan);
+        border-radius: 8px;
+        padding: 6px 12px;
+        font-weight: 600;
+        font-size: 0.8rem;
+        transition: all 0.2s ease;
+        text-decoration: none;
+    }
+    .btn-installer:hover {
+        background: linear-gradient(135deg, rgba(0, 242, 254, 0.18), rgba(79, 172, 254, 0.18));
+        border-color: var(--accent-cyan);
+        color: #ffffff;
+        box-shadow: 0 4px 15px rgba(0, 242, 254, 0.2);
+        transform: translateY(-1px);
+        text-decoration: none;
+    }
+    .btn-installer:active {
+        transform: translateY(0);
+    }
 </style>
 {% endblock %}
 
@@ -444,6 +468,7 @@
                             <th>Status</th>
                             <th>Token de Registro</th>
                             <th>Criada em</th>
+                            <th class="text-center">Instalador</th>
                             <th class="text-center">Ações</th>
                         </tr>
                     </thead>
@@ -503,6 +528,15 @@
                             </td>
                             <td class="text-muted" style="font-size: 0.85rem;">{{ company.created_at|date:"d/m/Y H:i" }}</td>
                             <td class="text-center">
+                                <a href="{% url 'download_agent_installer' company.id %}"
+                                   class="btn btn-sm btn-installer d-inline-flex align-items-center gap-1"
+                                   title="Baixar instalador pré-configurado para {{ company.name }}"
+                                   data-bs-toggle="tooltip" data-bs-placement="top">
+                                    <i class="bi bi-download"></i>
+                                    <span class="d-none d-xl-inline" style="font-size:0.8rem;">Instalador</span>
+                                </a>
+                            </td>
+                            <td class="text-center">
                                 <button type="button" class="btn btn-outline-info btn-sm" title="Editar Empresa" data-bs-toggle="modal" data-bs-target="#editCompanyModal{{ company.id }}">
                                     <i class="bi bi-pencil"></i>
                                 </button>
@@ -510,7 +544,7 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="7" class="text-center text-muted py-4">Nenhuma empresa cadastrada.</td>
+                            <td colspan="8" class="text-center text-muted py-4">Nenhuma empresa cadastrada.</td>
                         </tr>
                         {% endfor %}
                     </tbody>

@@ -217,3 +217,10 @@ MEDIA_ROOT = BASE_DIR / 'media'
 import sys
 TESTING = len(sys.argv) > 1 and sys.argv[1] == 'test'
 TEST_BYPASS_LGPD = TESTING
+
+# Agent Installer — URL pública do servidor que será gravada no config.json do agente
+# Configure no .env com o endereço acessível pelos clientes (IP, domínio ou ngrok)
+AGENT_PUBLIC_URL = config('AGENT_PUBLIC_URL', default='')
+
+# Caminho do executável do agente empacotado (copiado após pyinstaller build)
+AGENT_EXE_PATH = BASE_DIR / 'static' / 'agent' / 'inframind-agent.exe'

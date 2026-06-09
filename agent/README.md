@@ -67,7 +67,57 @@ Como alternativa de automação local, você também pode usar o script [instala
 
 ---
 
-### Opção B: Implantação de Produção via Executável (.exe)
+### Opção B: Distribuição Automatizada por Empresa (Recomendado para produção)
+
+Este é o fluxo recomendado para distribuir o agente a múltiplas empresas/clientes.
+
+#### 1. Empacotar o agente (uma única vez na máquina do admin)
+
+```bash
+# Na pasta agent/, com o .venv ativado:
+pip install pyinstaller
+pyinstaller --onefile --noconsole --name inframind-agent --icon inframind-agent.ico --clean main.py
+```
+
+#### 2. Gerar pacote por empresa
+
+Execute o script **[gerar_pacote_cliente.bat](file:///d:/InfraMind/agent/gerar_pacote_cliente.bat)** na máquina do administrador:
+
+```
+Preencha quando solicitado:
+  - Nome da Empresa   → ex: Empresa ABC
+  - URL do Backend    → ex: http://192.168.0.63:8000
+  - Token de Registro → obtido no painel /management/
+  - Pasta de destino  → padrão: C:\Program Files\InfraMind
+```
+
+O script gera automaticamente uma pasta em `agent/pacotes/InfraMind_NomeDaEmpresa/` contendo:
+
+| Arquivo | Descrição |
+|---|---|
+| `inframind-agent.exe` | Executável do agente (com ícone personalizado) |
+| `config.json` | Pré-configurado com URL e token da empresa |
+| `instalar.bat` | Instalador — roda na máquina do cliente |
+| `desinstalar.bat` | Remove o agente completamente |
+| `LEIA-ME.txt` | Instruções do pacote |
+
+#### 3. Instalar na máquina do cliente
+
+1. Copie a pasta gerada para a máquina do cliente (pen drive, pasta compartilhada, etc.)
+2. Execute `instalar.bat` como **Administrador**
+3. O instalador automaticamente:
+   - Instala o agente em `C:\Program Files\InfraMind\`
+   - Configura **inicialização automática** com o Windows via Agendador de Tarefas (conta SYSTEM)
+   - Inicia o agente imediatamente
+   - Confirma se o processo está rodando
+
+#### 4. Verificar no painel
+
+Acesse o painel InfraMind → **Máquinas**. A nova máquina deve aparecer como **Online** em até 60 segundos.
+
+---
+
+### Opção C: Implantação de Produção via Executável (.exe)
 
 Para simplificar a distribuição em computadores de colaboradores, você pode gerar um executável autônomo.
 

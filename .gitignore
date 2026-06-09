@@ -26,3 +26,16 @@ backend/media/company_logos/*
 .idea/
 .DS_Store
 Thumbs.db
+
+# Agent — Build & Distribution artifacts
+agent/dist/
+agent/build/
+agent/pacotes/
+agent/*.spec
+agent/*.ico
+agent/inframind-agent-icon.png
+agent/offline_metrics.json
+
+# Static agent binary (copiado após build — não versionar)
+backend/static/agent/inframind-agent.exe
+
