@@ -1,0 +1,242 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - InfraMind{% endblock %}
+
+{% block content %}
+<div class="container-fluid max-w-4xl mx-auto">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-light">{{ title }}</h1>
+            <p class="text-muted mb-0">Preencha os detalhes do serviço realizado</p>
+        </div>
+        <a href="{% url 'maintenance_list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Voltar
+        </a>
+    </div>
+
+    <form method="post" class="needs-validation" novalidate>
+        {% csrf_token %}
+        
+        <div class="card bg-dark border-secondary mb-4">
+            <div class="card-header bg-dark border-secondary d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 text-light"><i class="bi bi-info-circle me-2"></i>Informações Principais</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-12">
+                        <label class="form-label text-light">Título do Relatório</label>
+                        {{ form.title }}
+                        {% if form.title.errors %}<div class="text-danger small mt-1">{{ form.title.errors.0 }}</div>{% endif %}
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label class="form-label text-light">Máquina (Opcional)</label>
+                        {{ form.machine }}
+                        {% if form.machine.errors %}<div class="text-danger small mt-1">{{ form.machine.errors.0 }}</div>{% endif %}
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label class="form-label text-light">Chamado Relacionado (Opcional)</label>
+                        {{ form.ticket }}
+                        {% if form.ticket.errors %}<div class="text-danger small mt-1">{{ form.ticket.errors.0 }}</div>{% endif %}
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label class="form-label text-light">Tipo de Manutenção</label>
+                        {{ form.type }}
+                        {% if form.type.errors %}<div class="text-danger small mt-1">{{ form.type.errors.0 }}</div>{% endif %}
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label class="form-label text-light">Status</label>
+                        {{ form.status }}
+                        {% if form.status.errors %}<div class="text-danger small mt-1">{{ form.status.errors.0 }}</div>{% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card bg-dark border-secondary mb-4">
+            <div class="card-header bg-dark border-secondary">
+                <h5 class="mb-0 text-light"><i class="bi bi-card-text me-2"></i>Detalhes do Serviço</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-12">
+                        <label class="form-label text-light">Descrição do Problema / Motivo</label>
+                        {{ form.description }}
+                        {% if form.description.errors %}<div class="text-danger small mt-1">{{ form.description.errors.0 }}</div>{% endif %}
+                    </div>
+                    
+                    <div class="col-md-12">
+                        <label class="form-label text-light">Serviço Realizado</label>
+                        {{ form.work_done }}
+                        <div class="form-text text-muted">Descreva os procedimentos técnicos executados.</div>
+                        {% if form.work_done.errors %}<div class="text-danger small mt-1">{{ form.work_done.errors.0 }}</div>{% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card bg-dark border-secondary mb-4">
+            <div class="card-header bg-dark border-secondary d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 text-light"><i class="bi bi-box-seam me-2"></i>Peças e Materiais Utilizados</h5>
+                <button type="button" class="btn btn-sm btn-outline-cyan" id="add-item-btn">
+                    <i class="bi bi-plus"></i> Adicionar Item
+                </button>
+            </div>
+            <div class="card-body">
+                {{ formset.management_form }}
+                <div id="items-container">
+                    {% for item_form in formset %}
+                    <div class="row g-2 mb-3 item-row align-items-end">
+                        {% for hidden in item_form.hidden_fields %}
+                            {{ hidden }}
+                        {% endfor %}
+                        
+                        <div class="col-md-6">
+                            <label class="form-label text-light small mb-1">Descrição do Item</label>
+                            {{ item_form.description }}
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label text-light small mb-1">Qtd</label>
+                            {{ item_form.quantity }}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label text-light small mb-1">Custo Unit. (R$)</label>
+                            {{ item_form.unit_cost }}
+                        </div>
+                        <div class="col-md-1 text-center">
+                            <div class="form-check d-none">
+                                {{ item_form.DELETE }}
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-danger remove-item-btn h-100 w-100" title="Remover item">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <div id="empty-form-template" class="d-none">
+                    <div class="row g-2 mb-3 item-row align-items-end">
+                        {% for hidden in formset.empty_form.hidden_fields %}
+                            {{ hidden }}
+                        {% endfor %}
+                        <div class="col-md-6">
+                            <label class="form-label text-light small mb-1">Descrição do Item</label>
+                            {{ formset.empty_form.description }}
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label text-light small mb-1">Qtd</label>
+                            {{ formset.empty_form.quantity }}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label text-light small mb-1">Custo Unit. (R$)</label>
+                            {{ formset.empty_form.unit_cost }}
+                        </div>
+                        <div class="col-md-1 text-center">
+                            <div class="form-check d-none">
+                                {{ formset.empty_form.DELETE }}
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-danger remove-item-btn h-100 w-100" title="Remover item">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-3 border-top border-secondary pt-3">
+                    <div class="row">
+                        <div class="col-md-6 offset-md-6">
+                            <label class="form-label text-light">Custo de Mão de Obra / Serviço (R$)</label>
+                            {{ form.cost }}
+                            {% if form.cost.errors %}<div class="text-danger small mt-1">{{ form.cost.errors.0 }}</div>{% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card bg-dark border-secondary mb-4">
+            <div class="card-header bg-dark border-secondary">
+                <h5 class="mb-0 text-light"><i class="bi bi-clock me-2"></i>Prazos e Garantia</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label text-light">Agendado para</label>
+                        {{ form.scheduled_at }}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label text-light">Iniciado em</label>
+                        {{ form.started_at }}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label text-light">Concluído em</label>
+                        {{ form.completed_at }}
+                    </div>
+                    <div class="col-md-4 mt-3">
+                        <label class="form-label text-light">Garantia (dias)</label>
+                        {{ form.warranty_days }}
+                        <div class="form-text text-muted">0 para sem garantia.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2 mb-5">
+            <a href="{% url 'maintenance_list' %}" class="btn btn-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-cyan text-dark fw-bold px-4">
+                <i class="bi bi-save me-1"></i> Salvar Relatório
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const addButton = document.getElementById('add-item-btn');
+    const container = document.getElementById('items-container');
+    const emptyFormTemplate = document.getElementById('empty-form-template').innerHTML;
+    const totalFormsInput = document.getElementById('id_items-TOTAL_FORMS');
+
+    addButton.addEventListener('click', function() {
+        const formCount = parseInt(totalFormsInput.value);
+        const newFormHtml = emptyFormTemplate.replace(/__prefix__/g, formCount);
+        
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = newFormHtml;
+        const newRow = tempDiv.firstElementChild;
+        
+        container.appendChild(newRow);
+        totalFormsInput.value = formCount + 1;
+        
+        attachRemoveEvent(newRow.querySelector('.remove-item-btn'));
+    });
+
+    function attachRemoveEvent(button) {
+        if(!button) return;
+        button.addEventListener('click', function() {
+            const row = this.closest('.item-row');
+            const deleteInput = row.querySelector('input[type="checkbox"][id$="-DELETE"]');
+            
+            if (deleteInput) {
+                // Se é um form existente no banco, marca para deletar e esconde
+                deleteInput.checked = true;
+                row.style.display = 'none';
+            } else {
+                // Se é um form recém adicionado, remove do DOM
+                row.remove();
+                // Opcional: reindexar os forms, mas o Django lida bem com gaps se não forem muitos.
+                // Para produção ideal é reindexar o TOTAL_FORMS e os name/id.
+            }
+        });
+    }
+
+    // Attach to existing
+    document.querySelectorAll('.remove-item-btn').forEach(attachRemoveEvent);
+});
+</script>
+{% endblock %}

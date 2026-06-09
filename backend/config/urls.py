@@ -64,6 +64,9 @@ urlpatterns = [
     
     # Inventory
     path('', include('apps.inventory.urls')),
+    
+    # Maintenance
+    path('maintenance/', include('apps.maintenance.urls')),
 ]
 
 from django.conf import settings

@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Manutenção #{{ report.id }} - InfraMind{% endblock %}
+
+{% block content %}
+<div class="container-fluid max-w-4xl mx-auto">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <div class="d-flex align-items-center gap-3 mb-1">
+                <h1 class="h3 mb-0 text-light">Manutenção #{{ report.id }}</h1>
+                {% if report.status == 'planned' %}
+                    <span class="badge bg-secondary fs-6">Planejada</span>
+                {% elif report.status == 'in_progress' %}
+                    <span class="badge bg-warning text-dark fs-6">Em Andamento</span>
+                {% elif report.status == 'completed' %}
+                    <span class="badge bg-success fs-6">Concluída</span>
+                {% else %}
+                    <span class="badge bg-danger fs-6">Cancelada</span>
+                {% endif %}
+            </div>
+            <p class="text-muted mb-0">{{ report.title }}</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'maintenance_list' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Voltar
+            </a>
+            {% if request.user.role in 'superadmin,admin,technician' %}
+            <a href="{% url 'maintenance_update' report.id %}" class="btn btn-outline-info">
+                <i class="bi bi-pencil"></i> Editar
+            </a>
+            {% endif %}
+            <a href="{% url 'maintenance_print' report.id %}" target="_blank" class="btn btn-cyan text-dark fw-bold">
+                <i class="bi bi-printer me-1"></i> Imprimir Relatório
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Main Content -->
+        <div class="col-lg-8">
+            <div class="card bg-dark border-secondary mb-4">
+                <div class="card-header border-secondary">
+                    <h5 class="mb-0 text-light"><i class="bi bi-card-text me-2"></i>Detalhes do Serviço</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-2">Descrição do Problema / Motivo</h6>
+                        <div class="p-3 bg-secondary bg-opacity-10 rounded text-light">
+                            {{ report.description|linebreaks }}
+                        </div>
+                    </div>
+                    
+                    {% if report.work_done %}
+                    <div>
+                        <h6 class="text-muted mb-2">Serviço Realizado</h6>
+                        <div class="p-3 bg-secondary bg-opacity-10 rounded text-light border-start border-4 border-cyan">
+                            {{ report.work_done|linebreaks }}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card bg-dark border-secondary mb-4">
+                <div class="card-header border-secondary">
+                    <h5 class="mb-0 text-light"><i class="bi bi-box-seam me-2"></i>Itens e Peças</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-dark mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Descrição</th>
+                                    <th class="text-center">Qtd</th>
+                                    <th class="text-end">Custo Unit.</th>
+                                    <th class="text-end">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in report.items.all %}
+                                <tr>
+                                    <td>{{ item.description }}</td>
+                                    <td class="text-center">{{ item.quantity }}</td>
+                                    <td class="text-end text-muted">R$ {{ item.unit_cost|floatformat:2 }}</td>
+                                    <td class="text-end">R$ {{ item.total_cost|floatformat:2 }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-3">Nenhum item/peça registrado.</td>
+                                </tr>
+                                {% endfor %}
+                                
+                                <tr class="border-top border-secondary">
+                                    <td colspan="3" class="text-end text-muted">Custo do Serviço / Mão de Obra:</td>
+                                    <td class="text-end">R$ {{ report.cost|default:"0.00"|floatformat:2 }}</td>
+                                </tr>
+                                <tr>
+                                    <td colspan="3" class="text-end text-light fw-bold fs-5">Custo Total:</td>
+                                    <td class="text-end text-cyan fw-bold fs-5">R$ {{ report.total_cost|floatformat:2 }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Info -->
+        <div class="col-lg-4">
+            <div class="card bg-dark border-secondary mb-4">
+                <div class="card-header border-secondary">
+                    <h5 class="mb-0 text-light"><i class="bi bi-info-circle me-2"></i>Informações</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-3">
+                            <span class="text-muted d-block small">Tipo de Manutenção</span>
+                            <span class="text-light fw-medium">{{ report.get_type_display }}</span>
+                        </li>
+                        <li class="mb-3">
+                            <span class="text-muted d-block small">Máquina</span>
+                            {% if report.machine %}
+                                <a href="{% url 'machine_detail' report.machine.id %}" class="text-cyan text-decoration-none">
+                                    <i class="bi bi-pc-display me-1"></i>{{ report.machine.hostname }}
+                                </a>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </li>
+                        <li class="mb-3">
+                            <span class="text-muted d-block small">Chamado Origem</span>
+                            {% if report.ticket %}
+                                <a href="{% url 'ticket_detail' report.ticket.id %}" class="text-cyan text-decoration-none">
+                                    <i class="bi bi-ticket me-1"></i>#{{ report.ticket.id }}
+                                </a>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </li>
+                        <li class="mb-3">
+                            <span class="text-muted d-block small">Técnico Responsável</span>
+                            <span class="text-light">{{ report.technician.get_full_name|default:report.technician.email }}</span>
+                        </li>
+                        <li>
+                            <span class="text-muted d-block small">Garantia</span>
+                            {% if report.warranty_days > 0 %}
+                                <span class="text-success">{{ report.warranty_days }} dias</span>
+                            {% else %}
+                                <span class="text-muted">Sem garantia</span>
+                            {% endif %}
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card bg-dark border-secondary">
+                <div class="card-header border-secondary">
+                    <h5 class="mb-0 text-light"><i class="bi bi-clock-history me-2"></i>Datas</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-3">
+                            <span class="text-muted d-block small">Agendado para</span>
+                            <span class="text-light">{{ report.scheduled_at|date:"d/m/Y H:i"|default:"Não agendado" }}</span>
+                        </li>
+                        <li class="mb-3">
+                            <span class="text-muted d-block small">Iniciado em</span>
+                            <span class="text-light">{{ report.started_at|date:"d/m/Y H:i"|default:"Não iniciado" }}</span>
+                        </li>
+                        <li>
+                            <span class="text-muted d-block small">Concluído em</span>
+                            <span class="text-light">{{ report.completed_at|date:"d/m/Y H:i"|default:"Não concluído" }}</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

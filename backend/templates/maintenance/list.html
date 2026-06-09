@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+
+{% block title %}Relatórios de Manutenção - InfraMind{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-light">Relatórios de Manutenção</h1>
+            <p class="text-muted mb-0">Controle de reparos, upgrades e manutenções</p>
+        </div>
+        <a href="{% url 'maintenance_create' %}" class="btn btn-cyan text-dark fw-bold">
+            <i class="bi bi-plus-lg me-1"></i> Nova Manutenção
+        </a>
+    </div>
+
+    <!-- Cards Resumo -->
+    <div class="row g-4 mb-4">
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card bg-dark border-secondary h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">Total de Relatórios</h6>
+                            <h3 class="mb-0 text-light">{{ reports.count }}</h3>
+                        </div>
+                        <div class="bg-secondary bg-opacity-25 p-3 rounded-circle text-light">
+                            <i class="bi bi-file-earmark-text fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card bg-dark border-secondary h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">Em Andamento</h6>
+                            <h3 class="mb-0 text-warning">{{ in_progress_count }}</h3>
+                        </div>
+                        <div class="bg-warning bg-opacity-10 p-3 rounded-circle text-warning">
+                            <i class="bi bi-tools fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card bg-dark border-secondary h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">Concluídas</h6>
+                            <h3 class="mb-0 text-success">{{ completed_count }}</h3>
+                        </div>
+                        <div class="bg-success bg-opacity-10 p-3 rounded-circle text-success">
+                            <i class="bi bi-check-circle fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card bg-dark border-secondary h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">Custo Total (Período)</h6>
+                            <h3 class="mb-0 text-cyan">R$ {{ total_cost|floatformat:2 }}</h3>
+                        </div>
+                        <div class="bg-info bg-opacity-10 p-3 rounded-circle text-cyan">
+                            <i class="bi bi-currency-dollar fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabela -->
+    <div class="card bg-dark border-secondary">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Título</th>
+                            <th>Máquina</th>
+                            <th>Tipo</th>
+                            <th>Status</th>
+                            <th>Técnico</th>
+                            <th>Data</th>
+                            <th>Custo</th>
+                            <th class="text-end">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for report in reports %}
+                        <tr>
+                            <td class="text-muted">#{{ report.id }}</td>
+                            <td>
+                                <a href="{% url 'maintenance_detail' report.id %}" class="text-decoration-none text-light fw-medium">
+                                    {{ report.title }}
+                                </a>
+                            </td>
+                            <td>
+                                {% if report.machine %}
+                                    <a href="{% url 'machine_detail' report.machine.id %}" class="text-decoration-none text-cyan">
+                                        {{ report.machine.hostname }}
+                                    </a>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ report.get_type_display }}</td>
+                            <td>
+                                {% if report.status == 'planned' %}
+                                    <span class="badge bg-secondary">Planejada</span>
+                                {% elif report.status == 'in_progress' %}
+                                    <span class="badge bg-warning text-dark">Em Andamento</span>
+                                {% elif report.status == 'completed' %}
+                                    <span class="badge bg-success">Concluída</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Cancelada</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ report.technician.get_full_name|default:report.technician.email }}</td>
+                            <td class="text-muted" style="font-size: 0.85rem;">{{ report.created_at|date:"d/m/Y" }}</td>
+                            <td class="fw-medium text-light">R$ {{ report.total_cost|floatformat:2 }}</td>
+                            <td class="text-end">
+                                <a href="{% url 'maintenance_detail' report.id %}" class="btn btn-sm btn-outline-info" title="Visualizar">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{% url 'maintenance_print' report.id %}" target="_blank" class="btn btn-sm btn-outline-secondary ms-1" title="Imprimir Relatório">
+                                    <i class="bi bi-printer"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="9" class="text-center text-muted py-4">Nenhum relatório encontrado.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

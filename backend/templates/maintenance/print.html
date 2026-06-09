@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatório de Manutenção #{{ report.id }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            color: #333;
+            line-height: 1.5;
+            margin: 0;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            margin: 0 0 5px 0;
+            font-size: 24px;
+        }
+        .header p {
+            margin: 0;
+            color: #666;
+        }
+        .section {
+            margin-bottom: 25px;
+        }
+        .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .info-item strong {
+            display: inline-block;
+            width: 150px;
+        }
+        .text-box {
+            border: 1px solid #ccc;
+            padding: 10px;
+            min-height: 60px;
+            background-color: #f9f9f9;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .text-right {
+            text-align: right;
+        }
+        .text-center {
+            text-align: center;
+        }
+        .total-row {
+            font-weight: bold;
+            background-color: #f2f2f2;
+        }
+        .signatures {
+            margin-top: 50px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            text-align: center;
+        }
+        .signature-line {
+            border-top: 1px solid #333;
+            padding-top: 5px;
+        }
+        .no-print-btn {
+            display: block;
+            width: 200px;
+            margin: 0 auto 20px auto;
+            padding: 10px;
+            text-align: center;
+            background-color: #00f2fe;
+            color: #000;
+            text-decoration: none;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            border: none;
+        }
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            body {
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <button onclick="window.print()" class="no-print no-print-btn">
+        🖨️ Imprimir Relatório
+    </button>
+
+    <div class="header">
+        <h1>INFRAMIND — RELATÓRIO DE MANUTENÇÃO</h1>
+        <p>Documento de Registro Técnico e Prestação de Serviço</p>
+    </div>
+
+    <div class="section">
+        <div class="info-grid">
+            <div class="info-item"><strong>Nº do Relatório:</strong> #{{ report.id }}</div>
+            <div class="info-item"><strong>Status:</strong> {{ report.get_status_display }}</div>
+            <div class="info-item"><strong>Data Emissão:</strong> {% now "d/m/Y H:i" %}</div>
+            <div class="info-item"><strong>Tipo de Serviço:</strong> {{ report.get_type_display }}</div>
+            <div class="info-item"><strong>Empresa/Cliente:</strong> {{ report.company.name }}</div>
+            <div class="info-item"><strong>Técnico Resp.:</strong> {{ report.technician.get_full_name|default:report.technician.email }}</div>
+            {% if report.machine %}
+            <div class="info-item" style="grid-column: span 2;"><strong>Equipamento:</strong> {{ report.machine.hostname }} (IP: {{ report.machine.ip_address|default:"N/A" }})</div>
+            {% endif %}
+            {% if report.ticket %}
+            <div class="info-item" style="grid-column: span 2;"><strong>Chamado Origem:</strong> #{{ report.ticket.id }} - {{ report.ticket.title }}</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Descrição do Problema / Motivo</div>
+        <div class="text-box">
+            {{ report.description|linebreaksbr }}
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Serviço Realizado</div>
+        <div class="text-box">
+            {{ report.work_done|default:"Nenhum detalhe adicional fornecido."|linebreaksbr }}
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Peças, Materiais e Custos</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Descrição do Item</th>
+                    <th class="text-center" style="width: 80px;">Qtd</th>
+                    <th class="text-right" style="width: 120px;">V. Unitário</th>
+                    <th class="text-right" style="width: 120px;">Subtotal</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in report.items.all %}
+                <tr>
+                    <td>{{ item.description }}</td>
+                    <td class="text-center">{{ item.quantity }}</td>
+                    <td class="text-right">R$ {{ item.unit_cost|floatformat:2 }}</td>
+                    <td class="text-right">R$ {{ item.total_cost|floatformat:2 }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center">Nenhuma peça ou material utilizado.</td>
+                </tr>
+                {% endfor %}
+                <tr>
+                    <td colspan="3" class="text-right">Custo Serviço / Mão de Obra:</td>
+                    <td class="text-right">R$ {{ report.cost|default:"0.00"|floatformat:2 }}</td>
+                </tr>
+                <tr class="total-row">
+                    <td colspan="3" class="text-right">CUSTO TOTAL:</td>
+                    <td class="text-right">R$ {{ report.total_cost|floatformat:2 }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Prazos e Garantia</div>
+        <div class="info-grid">
+            <div class="info-item"><strong>Início do Serviço:</strong> {{ report.started_at|date:"d/m/Y H:i"|default:"-" }}</div>
+            <div class="info-item"><strong>Término do Serviço:</strong> {{ report.completed_at|date:"d/m/Y H:i"|default:"-" }}</div>
+            <div class="info-item" style="grid-column: span 2;"><strong>Prazo de Garantia:</strong> {% if report.warranty_days > 0 %}{{ report.warranty_days }} dias a partir da data de término.{% else %}Sem garantia para este serviço.{% endif %}</div>
+        </div>
+    </div>
+
+    <div class="signatures">
+        <div>
+            <br><br><br>
+            <div class="signature-line">
+                Assinatura do Técnico Responsável<br>
+                {{ report.technician.get_full_name|default:report.technician.email }}
+            </div>
+        </div>
+        <div>
+            <br><br><br>
+            <div class="signature-line">
+                Assinatura do Cliente / Responsável<br>
+                {{ report.company.name }}
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
