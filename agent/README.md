@@ -190,6 +190,11 @@ Caso a máquina perca conexão com a internet ou se desconecte da VPN corporativ
 ## Inteligência de Auto-Recuperação e Boas Práticas
 
 - **Prevenção de Duplicidades (Cópia de Pasta)**: Se a pasta do agente contendo um `config.json` ativo for copiada para outro computador, o agente detectará que o hostname do Windows é diferente do configurado no JSON. Ele removerá a chave de API antiga e os dados do outro computador automaticamente, iniciando um novo cadastro com o nome correto.
-- **Auto-recuperação (Self-healing)**: Caso o servidor backend rejeite a chave de API (ex: se o banco de dados for recriado), o agente identificará a falha de autenticação, excluirá o `config.json` e abrirá o assistente de registro interativo no terminal.
+- Auto-recuperação (Self-healing): Caso o servidor backend rejeite a chave de API (ex: se o banco de dados for recriado), o agente identificará a falha de autenticação, excluirá o `config.json` e abrirá o assistente de registro interativo no terminal.
 - Cada máquina precisa de sua própria `api_key` exclusiva.
 - Ajuste o `backend_url` no arquivo de configuração conforme o ambiente (ex: o IP local do seu servidor `http://192.168.0.63:8000` se estiver na mesma rede local/Wi-Fi/VPN, ou o endereço DNS público do servidor).
+
+---
+
+## Módulo de Manutenção
+Todos os reparos físicos, formatações e upgrades de hardware realizados na máquina onde o agente está rodando podem ser registrados oficialmente como **Ordens de Serviço** no painel web (Menu "Manutenção").

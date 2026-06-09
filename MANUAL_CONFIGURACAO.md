@@ -286,3 +286,21 @@ O isolamento multi-tenant é implementado de forma transparente na camada do ban
 * Cada filial possui seu próprio **Token de Registro** exclusivo.
 * **Importante**: Nunca instale o agente em uma filial usando o token da matriz, caso contrário todas as métricas daquela máquina serão computadas diretamente na matriz. Use sempre o token gerado para la filial específica.
 * Após a primeira inicialização do agente com o token da filial, o servidor cria a máquina vinculada àquela filial, gera uma chave `api_key` exclusiva e mantém o fluxo de envio periódico de métricas. O administrador da matriz verá a máquina listada sob a filial correspondente no painel consolidado.
+
+---
+
+## 7. Módulo de Relatórios de Manutenção e Ordens de Serviço (O.S.)
+
+O InfraMind inclui um sistema completo para registro de manutenções preventivas, corretivas e upgrades realizados nas estações de trabalho.
+
+### 7.1. Funcionalidades do Módulo de Manutenção
+* **Registro Técnico Detalhado**: Permite informar descrição do problema, serviço realizado, tipo (Preventiva, Corretiva, Limpeza, Upgrade HW/SW), prazos e dias de garantia.
+* **Gestão de Custos e Peças**: É possível listar individualmente as peças utilizadas no reparo (ex: SSD, Memória RAM) e o custo de mão de obra. O sistema calcula o valor total automaticamente.
+* **Integração com Tenancy e Máquinas**: Cada relatório fica vinculado ao equipamento e à respectiva empresa/filial do cliente.
+* **Ordem de Serviço (PDF)**: O sistema gera um documento limpo e profissional otimizado para impressão (A4) contendo os dados do serviço e linhas para assinatura do cliente e do técnico.
+
+### 7.2. Como utilizar
+1. Acesse a seção **Manutenção** no menu lateral do painel.
+2. Clique em **Nova Manutenção**.
+3. Preencha os dados e adicione as peças em **Itens e Peças**.
+4. Salve e clique no botão **Imprimir Relatório** para gerar o comprovante final para o cliente.
