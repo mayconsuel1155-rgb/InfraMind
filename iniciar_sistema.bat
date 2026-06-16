@@ -78,7 +78,7 @@ goto sair
 :docker_ready
 echo.
 echo [+] Iniciando containers com Docker Compose...
-docker compose up
+docker compose up --build
 pause
 goto sair
 

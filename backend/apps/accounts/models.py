@@ -54,6 +54,10 @@ class User(AbstractBaseUser, PermissionsMixin):
     lgpd_accepted_at = models.DateTimeField(null=True, blank=True, verbose_name="Data de Aceite LGPD")
     lgpd_terms_version = models.CharField(max_length=10, default="1.0", verbose_name="Versão dos Termos")
 
+    # MFA Fields
+    mfa_secret = models.CharField(max_length=32, blank=True, null=True, verbose_name="Segredo MFA (TOTP)")
+    mfa_enabled = models.BooleanField(default=False, verbose_name="MFA Ativado")
+
     objects = UserManager()
     objects_all = models.Manager()
 

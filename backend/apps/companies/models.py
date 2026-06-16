@@ -23,6 +23,7 @@ class Company(models.Model):
     registration_token = models.CharField(max_length=64, unique=True, null=True, blank=True)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    mfa_enforced = models.BooleanField(default=False, verbose_name="MFA Obrigatório para Usuários")
     parent_company = models.ForeignKey(
         'self',
         on_delete=models.SET_NULL,

@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+
+{% block title %}InfraMind - Compliance Center (CNJ 213){% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0">Compliance Center</h2>
+            <p class="text-muted">Aderência ao Provimento CNJ nº 213/2026</p>
+        </div>
+        <div>
+            <a href="{% url 'compliance_report_executive' %}" target="_blank" class="btn btn-premium"><i class="bi bi-file-earmark-pdf me-2"></i>Gerar Relatório Executivo</a>
+            <a href="{% url 'compliance_report_audit' %}" target="_blank" class="btn btn-outline-secondary ms-2"><i class="bi bi-file-earmark-pdf me-2"></i>Auditoria Global</a>
+        </div>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-danger">{{ error }}</div>
+    {% else %}
+    
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="glass-card p-4 text-center">
+                <h6 class="text-muted text-uppercase mb-3">Aderência Geral</h6>
+                <div class="display-4 fw-bold {% if score >= 80 %}text-success{% elif score >= 50 %}text-warning{% else %}text-danger{% endif %}">
+                    {{ score }}%
+                </div>
+                <div class="progress mt-3" style="height: 6px;">
+                    <div class="progress-bar {% if score >= 80 %}bg-success{% elif score >= 50 %}bg-warning{% else %}bg-danger{% endif %}" role="progressbar" style="width: {{ score }}%;"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-9">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="glass-card p-4">
+                        <div class="d-flex justify-content-between">
+                            <h6 class="text-muted">Implementados</h6>
+                            <i class="bi bi-check-circle text-success fs-5"></i>
+                        </div>
+                        <h2 class="fw-bold mb-0 mt-2">{{ implemented }}</h2>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="glass-card p-4">
+                        <div class="d-flex justify-content-between">
+                            <h6 class="text-muted">Parciais</h6>
+                            <i class="bi bi-exclamation-circle text-warning fs-5"></i>
+                        </div>
+                        <h2 class="fw-bold mb-0 mt-2">{{ partial }}</h2>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="glass-card p-4">
+                        <div class="d-flex justify-content-between">
+                            <h6 class="text-muted">Não Implementados</h6>
+                            <i class="bi bi-x-circle text-danger fs-5"></i>
+                        </div>
+                        <h2 class="fw-bold mb-0 mt-2">{{ none }}</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Requisitos -->
+        <div class="col-md-8">
+            <div class="glass-card p-4 mb-4">
+                <h5 class="fw-bold mb-4">Matriz de Conformidade</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="text-muted">
+                            <tr>
+                                <th>Requisito</th>
+                                <th>Descrição</th>
+                                <th>Status</th>
+                                <th>Ação / Evidência</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ev in evidences %}
+                            <tr>
+                                <td class="fw-bold">{{ ev.requirement.article }}</td>
+                                <td>{{ ev.requirement.description }}</td>
+                                <td>
+                                    {% if ev.status == 'implemented' %}
+                                        <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25"><i class="bi bi-check me-1"></i>Implementado</span>
+                                    {% elif ev.status == 'partial' %}
+                                        <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25"><i class="bi bi-dash me-1"></i>Parcial</span>
+                                    {% else %}
+                                        <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25"><i class="bi bi-x me-1"></i>Não Implementado</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-secondary" title="Editar Evidência">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="4" class="text-center text-muted">Nenhum requisito mapeado.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Riscos -->
+        <div class="col-md-4">
+            <div class="glass-card p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="fw-bold mb-0">Matriz de Riscos</h5>
+                    <button class="btn btn-sm btn-premium"><i class="bi bi-plus"></i></button>
+                </div>
+                
+                {% for risk in risks %}
+                <div class="p-3 mb-3 border border-secondary border-opacity-25 rounded-3 bg-dark">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="fw-bold">{{ risk.title }}</span>
+                        {% if risk.impact == 'critical' %}
+                            <span class="badge bg-danger">Crítico</span>
+                        {% elif risk.impact == 'high' %}
+                            <span class="badge bg-warning text-dark">Alto</span>
+                        {% elif risk.impact == 'medium' %}
+                            <span class="badge bg-info text-dark">Médio</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Baixo</span>
+                        {% endif %}
+                    </div>
+                    <small class="text-muted d-block">Probabilidade: {{ risk.get_probability_display }}</small>
+                    <small class="text-muted d-block mt-1">Plano: {{ risk.mitigation_plan|truncatechars:50 }}</small>
+                </div>
+                {% empty %}
+                <div class="text-center text-muted py-4">
+                    <i class="bi bi-shield-check fs-1 mb-2"></i>
+                    <p>Nenhum risco ativo registrado.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

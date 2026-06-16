@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Relatório Executivo - CNJ 213 - {{ company.name }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 14px; color: #333; background: #fff; }
+        .page-break { page-break-after: always; }
+        .header { border-bottom: 2px solid #000; margin-bottom: 30px; padding-bottom: 10px; }
+        .footer { position: fixed; bottom: 0; width: 100%; border-top: 1px solid #ccc; padding-top: 10px; font-size: 11px; text-align: center; }
+        @media print {
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body onload="window.print()">
+    <div class="container my-5">
+        <div class="no-print mb-4 text-end">
+            <button onclick="window.print()" class="btn btn-primary">Imprimir / Salvar PDF</button>
+            <a href="{% url 'compliance_dashboard' %}" class="btn btn-outline-secondary">Voltar</a>
+        </div>
+
+        <div class="header d-flex justify-content-between align-items-end">
+            <div>
+                <h2>Relatório Executivo de Conformidade</h2>
+                <h5 class="text-muted">Provimento CNJ nº 213/2026</h5>
+            </div>
+            <div class="text-end">
+                <strong>Empresa:</strong> {{ company.name }}<br>
+                <strong>Data de Emissão:</strong> {{ date|date:"d/m/Y" }}
+            </div>
+        </div>
+
+        <div class="row mb-5">
+            <div class="col-6">
+                <h4>1. Visão Geral</h4>
+                <p>Este relatório atesta o nível de aderência da infraestrutura de TI da Serventia aos parâmetros estabelecidos pelo Provimento CNJ nº 213/2026.</p>
+                <div class="p-3 bg-light border">
+                    <h5 class="mb-0">Índice Geral de Aderência: <strong>{{ score }}%</strong></h5>
+                </div>
+            </div>
+        </div>
+
+        <h4>2. Matriz de Conformidade</h4>
+        <table class="table table-bordered table-sm mb-5">
+            <thead class="table-dark">
+                <tr>
+                    <th>Artigo / Requisito</th>
+                    <th>Status</th>
+                    <th>Evidência / Ação Necessária</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ev in evidences %}
+                <tr>
+                    <td><strong>{{ ev.requirement.article }}</strong><br><small>{{ ev.requirement.description }}</small></td>
+                    <td>{{ ev.get_status_display }}</td>
+                    <td>{{ ev.evidence_text|default:"Sem evidência" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <h4>3. Matriz de Riscos Residuais</h4>
+        <table class="table table-bordered table-sm mb-5">
+            <thead class="table-dark">
+                <tr>
+                    <th>Risco</th>
+                    <th>Impacto</th>
+                    <th>Probabilidade</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for risk in risks %}
+                <tr>
+                    <td>{{ risk.title }}</td>
+                    <td>{{ risk.get_impact_display }}</td>
+                    <td>{{ risk.get_probability_display }}</td>
+                    <td>{% if risk.resolved %}Tratado{% else %}Aberto{% endif %}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="4" class="text-center">Nenhum risco registrado.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="mt-5 pt-5 border-top text-center" style="width: 300px; margin: 0 auto;">
+            <p>Assinatura do Oficial Registrador / Responsável</p>
+        </div>
+
+        <div class="footer">
+            Gerado via InfraMind Platform em {{ date|date:"d/m/Y" }} — Documento Confidencial
+        </div>
+    </div>
+</body>
+</html>

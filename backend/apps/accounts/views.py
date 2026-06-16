@@ -35,8 +35,16 @@ def login_view(request):
             user = authenticate(request, email=email, password=password)
             if user is not None:
                 if user.is_active:
-                    login(request, user)
-                    return redirect('dashboard')
+                    mfa_required = user.mfa_enabled or (user.company and user.company.mfa_enforced)
+                    if mfa_required:
+                        request.session['pre_mfa_user_id'] = user.id
+                        if user.mfa_enabled:
+                            return redirect('mfa_verify')
+                        else:
+                            return redirect('mfa_setup')
+                    else:
+                        login(request, user)
+                        return redirect('dashboard')
                 else:
                     error_message = "Esta conta de usuário foi desativada."
             else:
@@ -45,6 +53,68 @@ def login_view(request):
         form = EmailAuthenticationForm()
 
     return render(request, 'login.html', {'form': form, 'error_message': error_message})
+
+import pyotp
+import qrcode
+import qrcode.image.svg
+from io import BytesIO
+
+def mfa_setup(request):
+    user_id = request.session.get('pre_mfa_user_id')
+    if not user_id:
+        return redirect('login')
+    
+    user = User.objects.get(id=user_id)
+    if user.mfa_enabled:
+        return redirect('mfa_verify')
+
+    if not user.mfa_secret:
+        user.mfa_secret = pyotp.random_base32()
+        user.save()
+
+    totp = pyotp.TOTP(user.mfa_secret)
+    provisioning_uri = totp.provisioning_uri(name=user.email, issuer_name="InfraMind")
+    
+    # Generate QR Code SVG
+    factory = qrcode.image.svg.SvgImage
+    img = qrcode.make(provisioning_uri, image_factory=factory)
+    stream = BytesIO()
+    img.save(stream)
+    svg = stream.getvalue().decode()
+
+    error_message = None
+    if request.method == 'POST':
+        code = request.POST.get('mfa_code')
+        if totp.verify(code):
+            user.mfa_enabled = True
+            user.save()
+            login(request, user)
+            del request.session['pre_mfa_user_id']
+            return redirect('dashboard')
+        else:
+            error_message = "Código inválido. Tente novamente."
+
+    return render(request, 'mfa_setup.html', {'svg': svg, 'error_message': error_message})
+
+def mfa_verify(request):
+    user_id = request.session.get('pre_mfa_user_id')
+    if not user_id:
+        return redirect('login')
+    
+    user = User.objects.get(id=user_id)
+    error_message = None
+
+    if request.method == 'POST':
+        code = request.POST.get('mfa_code')
+        totp = pyotp.TOTP(user.mfa_secret)
+        if totp.verify(code):
+            login(request, user)
+            del request.session['pre_mfa_user_id']
+            return redirect('dashboard')
+        else:
+            error_message = "Código inválido. Tente novamente."
+
+    return render(request, 'mfa_verify.html', {'error_message': error_message})
 
 def logout_view(request):
     logout(request)

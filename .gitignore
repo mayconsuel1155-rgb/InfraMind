@@ -39,3 +39,7 @@ agent/offline_metrics.json
 # Static agent binary (copiado após build — não versionar)
 backend/static/agent/inframind-agent.exe
 
+# Backend Build artifacts
+backend/dist/
+backend/build/
+backend/*.spec

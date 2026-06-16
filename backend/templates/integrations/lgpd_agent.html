@@ -1,0 +1,213 @@
+{% extends 'base.html' %}
+
+{% block title %}InfraMind - Agente LGPD{% endblock %}
+
+{% block extra_css %}
+<style>
+    .chat-container {
+        height: calc(100vh - 250px);
+        min-height: 400px;
+        display: flex;
+        flex-direction: column;
+    }
+    .chat-messages {
+        flex-grow: 1;
+        overflow-y: auto;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+    .message {
+        max-width: 80%;
+        padding: 15px 20px;
+        border-radius: 15px;
+        font-size: 0.95rem;
+        line-height: 1.5;
+        animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .message-user {
+        align-self: flex-end;
+        background: linear-gradient(135deg, rgba(79, 172, 254, 0.2) 0%, rgba(0, 242, 254, 0.2) 100%);
+        border: 1px solid rgba(0, 242, 254, 0.3);
+        border-bottom-right-radius: 4px;
+    }
+    .message-ai {
+        align-self: flex-start;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-bottom-left-radius: 4px;
+    }
+    .chat-input-area {
+        padding: 20px;
+        border-top: 1px solid var(--card-border);
+        background: rgba(0, 0, 0, 0.2);
+        border-bottom-left-radius: 16px;
+        border-bottom-right-radius: 16px;
+    }
+    .typing-indicator {
+        display: none;
+        align-self: flex-start;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 15px;
+        border-bottom-left-radius: 4px;
+        padding: 15px 20px;
+        margin-bottom: 15px;
+    }
+    .typing-indicator span {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        background-color: var(--accent-cyan);
+        border-radius: 50%;
+        margin-right: 5px;
+        animation: typing 1.4s infinite ease-in-out both;
+    }
+    .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+    .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+    @keyframes typing {
+        0%, 80%, 100% { transform: scale(0); }
+        40% { transform: scale(1); }
+    }
+    
+    /* Markdown Styling in AI messages */
+    .message-ai h1, .message-ai h2, .message-ai h3 {
+        font-size: 1.1rem;
+        margin-top: 10px;
+        margin-bottom: 10px;
+        color: var(--accent-cyan);
+    }
+    .message-ai p { margin-bottom: 10px; }
+    .message-ai p:last-child { margin-bottom: 0; }
+    .message-ai ul, .message-ai ol { margin-bottom: 10px; padding-left: 20px; }
+    .message-ai strong { color: #fff; }
+    .message-ai code {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 2px 5px;
+        border-radius: 4px;
+        font-family: monospace;
+        color: #ff79c6;
+    }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h1><i class="bi bi-shield-lock text-cyan me-2"></i>Agente LGPD</h1>
+        <p class="text-muted mb-0">Consultor Especialista em Lei Geral de Proteção de Dados</p>
+    </div>
+</div>
+
+<div class="glass-card p-0 mb-4">
+    <div class="chat-container">
+        <div class="chat-messages" id="chatMessages">
+            <div class="message message-ai">
+                <strong>Agente LGPD:</strong><br>
+                Olá! Sou o seu consultor especialista em LGPD (Lei Geral de Proteção de Dados - Lei nº 13.709/2018).<br>
+                Estou aqui para tirar suas dúvidas sobre direitos dos titulares, bases legais, adequação de processos e segurança da informação. Como posso ajudar hoje?
+            </div>
+            
+            <div class="typing-indicator" id="typingIndicator">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+        
+        <div class="chat-input-area">
+            <form id="chatForm" onsubmit="sendMessage(event)">
+                <div class="input-group">
+                    <input type="text" id="messageInput" class="form-control glass-input" placeholder="Digite sua pergunta sobre a LGPD..." autocomplete="off" required>
+                    <button class="btn btn-premium" type="submit" id="sendBtn">
+                        <i class="bi bi-send-fill"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const chatForm = document.getElementById('chatForm');
+    const messageInput = document.getElementById('messageInput');
+    const chatMessages = document.getElementById('chatMessages');
+    const typingIndicator = document.getElementById('typingIndicator');
+    const sendBtn = document.getElementById('sendBtn');
+
+    function scrollToBottom() {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function appendMessage(text, isUser) {
+        const div = document.createElement('div');
+        div.className = `message ${isUser ? 'message-user' : 'message-ai'}`;
+        
+        if (isUser) {
+            div.innerHTML = `<strong>Você:</strong><br>${text}`;
+        } else {
+            // Parse markdown for AI response
+            div.innerHTML = `<strong>Agente LGPD:</strong><br>${marked.parse(text)}`;
+        }
+        
+        // Insert before typing indicator
+        chatMessages.insertBefore(div, typingIndicator);
+        scrollToBottom();
+    }
+
+    async function sendMessage(e) {
+        e.preventDefault();
+        const text = messageInput.value.trim();
+        if (!text) return;
+
+        // Add user message
+        appendMessage(text, true);
+        messageInput.value = '';
+        messageInput.disabled = true;
+        sendBtn.disabled = true;
+        
+        // Show typing indicator
+        typingIndicator.style.display = 'block';
+        scrollToBottom();
+
+        try {
+            const response = await fetch('{% url "api_lgpd_chat" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({ message: text })
+            });
+            
+            const data = await response.json();
+            
+            typingIndicator.style.display = 'none';
+            
+            if (response.ok && data.status === 'ok') {
+                appendMessage(data.response, false);
+            } else {
+                appendMessage(`Erro: ${data.message || 'Falha ao se comunicar com a IA.'}`, false);
+            }
+        } catch (error) {
+            typingIndicator.style.display = 'none';
+            appendMessage(`Erro de conexão: ${error.message}`, false);
+        } finally {
+            messageInput.disabled = false;
+            sendBtn.disabled = false;
+            messageInput.focus();
+        }
+    }
+    
+    // Focus input on load
+    window.onload = () => {
+        messageInput.focus();
+    };
+</script>
+{% endblock %}

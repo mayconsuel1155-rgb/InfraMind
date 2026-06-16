@@ -67,6 +67,9 @@ urlpatterns = [
     
     # Maintenance
     path('maintenance/', include('apps.maintenance.urls')),
+
+    # Compliance
+    path('compliance/', include('apps.compliance.urls')),
 ]
 
 from django.conf import settings

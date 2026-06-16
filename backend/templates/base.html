@@ -407,6 +407,10 @@
                     <i class="bi bi-chat-left-dots text-info"></i>
                     <span class="text-info">Suporte</span>
                 </a>
+                <a href="{% url 'lgpd_agent' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'lgpd_agent' %}active{% endif %}">
+                    <i class="bi bi-shield-lock text-cyan"></i>
+                    <span class="text-cyan">Agente LGPD</span>
+                </a>
                 {% if request.user.role == 'admin' or request.user.role == 'superadmin' %}
                 <a href="{% url 'management_console' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'management_console' %}active{% endif %}">
                     <i class="bi bi-people-fill text-cyan"></i>
@@ -415,6 +419,10 @@
                 <a href="{% url 'ai_config' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'ai_config' %}active{% endif %}">
                     <i class="bi bi-robot text-warning"></i>
                     <span class="text-warning">IA</span>
+                </a>
+                <a href="{% url 'compliance_dashboard' %}" class="nav-link-custom {% if 'compliance' in request.path %}active{% endif %}">
+                    <i class="bi bi-shield-check text-success"></i>
+                    <span class="text-success">Compliance</span>
                 </a>
                 {% endif %}
             </nav>
@@ -515,6 +523,10 @@
                 <i class="bi bi-chat-left-dots text-info"></i>
                 <span class="text-info">Suporte Técnico</span>
             </a>
+            <a href="{% url 'lgpd_agent' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'lgpd_agent' %}active{% endif %}">
+                <i class="bi bi-shield-lock text-cyan"></i>
+                <span class="text-cyan">Agente LGPD</span>
+            </a>
             {% if request.user.role == 'admin' or request.user.role == 'superadmin' %}
             <a href="{% url 'management_console' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'management_console' %}active{% endif %}">
                 <i class="bi bi-people-fill text-cyan"></i>
@@ -523,6 +535,10 @@
             <a href="{% url 'ai_config' %}" class="nav-link-custom {% if request.resolver_match.url_name == 'ai_config' %}active{% endif %}">
                 <i class="bi bi-robot text-warning"></i>
                 <span class="text-warning">Configurações de IA</span>
+            </a>
+            <a href="{% url 'compliance_dashboard' %}" class="nav-link-custom {% if 'compliance' in request.path %}active{% endif %}">
+                <i class="bi bi-shield-check text-success"></i>
+                <span class="text-success">Compliance CNJ 213</span>
             </a>
             {% endif %}
         </nav>

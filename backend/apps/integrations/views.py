@@ -178,3 +178,45 @@ Por favor, elabore sua resposta estruturada em Markdown contendo exatamente as s
         "diagnosis": diagnosis,
         "severity": alert.severity,
     })
+
+
+@login_required
+def lgpd_agent_view(request):
+    company = _resolve_company(request.user)
+    if not company:
+        return HttpResponseForbidden("Sua conta não está associada a nenhuma empresa ativa.")
+    return render(request, 'integrations/lgpd_agent.html', {'company': company})
+
+
+@login_required
+@require_POST
+def api_lgpd_chat_view(request):
+    try:
+        data = json.loads(request.body or "{}")
+    except ValueError:
+        return JsonResponse({"status": "error", "message": "JSON inválido"}, status=400)
+
+    user_message = (data.get('message') or '').strip()
+    if not user_message:
+        return JsonResponse({"status": "error", "message": "Mensagem vazia"}, status=400)
+
+    company = _resolve_company(request.user)
+    if not company:
+        return JsonResponse({"status": "error", "message": "Empresa não encontrada."}, status=400)
+
+    ai_service = AIService(company)
+    
+    prompt = f"""Você é um consultor especialista na Lei Geral de Proteção de Dados (LGPD - Lei nº 13.709/2018) do Brasil.
+Seu objetivo é ajudar técnicos, administradores e usuários do sistema InfraMind a entenderem as regras, direitos dos titulares, bases legais e melhores práticas de conformidade e segurança da informação.
+Responda de forma clara, didática e sempre embasada na LGPD. Se a pergunta não for relacionada a LGPD ou proteção de dados, diga educadamente que você só pode ajudar com temas de LGPD.
+Formate sua resposta em Markdown.
+
+Pergunta do usuário: {user_message}
+"""
+
+    response_text = ai_service.generate_completion(prompt)
+
+    return JsonResponse({
+        "status": "ok",
+        "response": response_text
+    })

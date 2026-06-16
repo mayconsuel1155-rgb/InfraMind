@@ -11,11 +11,26 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 import os
+import sys
 from pathlib import Path
-from decouple import config
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+# Adjust paths if frozen by PyInstaller
+if getattr(sys, 'frozen', False):
+    BASE_DIR = Path(sys._MEIPASS)
+else:
+    BASE_DIR = Path(__file__).resolve().parent.parent
+
+DATA_DIR = Path(os.environ.get('INFRAMIND_DATA_DIR', str(BASE_DIR)))
+
+from decouple import Config, RepositoryEnv, config as _config
+try:
+    env_path = DATA_DIR / '.env'
+    if env_path.exists():
+        config = Config(RepositoryEnv(str(env_path)))
+    else:
+        config = _config
+except Exception:
+    config = _config
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -52,6 +67,8 @@ INSTALLED_APPS = [
     'apps.inventory',
     'apps.integrations',
     'apps.maintenance',
+    'apps.audit',
+    'apps.compliance',
 ]
 
 MIDDLEWARE = [
@@ -69,6 +86,9 @@ MIDDLEWARE = [
     
     # LGPD Consent Middleware
     'core.middleware.LGPDConsentMiddleware',
+
+    # Audit Middleware
+    'apps.audit.middleware.AuditMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -109,7 +129,7 @@ else:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+            'NAME': DATA_DIR / 'db.sqlite3',
         }
     }
 
@@ -159,6 +179,10 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
+STATIC_ROOT = DATA_DIR / 'staticfiles'
+
+MEDIA_URL = 'media/'
+MEDIA_ROOT = DATA_DIR / 'media'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
